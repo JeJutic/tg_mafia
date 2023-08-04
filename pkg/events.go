@@ -50,8 +50,9 @@ type NightStartedEvent struct {
 }
 
 type NightActEvent struct {
-	Player  Player //player's role just to name acting right way
-	Victims []string
+	Player     Player //player's role just to name acting right way
+	Victims    []string
+	MafiaAlive bool
 }
 
 type UnexpectedActTrialEvent struct {
@@ -75,7 +76,7 @@ type NightEndedEvent struct { //notifying what happened during night
 
 type WinEvent struct {
 	Users   []int64
-	Role    Role
+	Side    Side
 	Winners []string
 }
 

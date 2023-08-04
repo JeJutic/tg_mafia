@@ -28,15 +28,20 @@ func parseRoles(tokens []string) ([]game.Role, error) {
 
 	roles := make([]game.Role, len(tokens))
 	for i, token := range tokens {
-		if token == "мафия" || token == "маф" {
+		switch token {
+		case "мафия", "маф":
 			roles[i] = game.Mafia
-		} else if token == "мирный" || token == "мир" {
+		case "мирный", "мир":
 			roles[i] = game.Peaceful
-		} else if token == "врач" || token == "доктор" {
+		case "врач", "доктор", "док":
 			roles[i] = game.Doctor
-		} else if token == "свидетельница" || token == "свид" {
+		case "свидетельница", "свид":
 			roles[i] = game.Witness
-		} else {
+		case "комиссар", "ком", "шериф":
+			roles[i] = game.Sheriff
+		case "маньяк", "ман", "убийца":
+			roles[i] = game.Maniac
+		default:
 			err := errors.New("Неизвестный токен роли: " + token)
 			return roles, err
 		}

@@ -10,6 +10,8 @@ const (
 	Peaceful
 	Doctor
 	Witness
+	Sheriff
+	Maniac
 )
 
 type Side int
@@ -18,6 +20,7 @@ const (
 	_ Side = iota
 	MafiaSide
 	PeacefulSide
+	ManiacSide
 )
 
 var roleToSide = map[Role]Side{ //mb not best that map isn't const
@@ -25,6 +28,8 @@ var roleToSide = map[Role]Side{ //mb not best that map isn't const
 	Peaceful: PeacefulSide,
 	Doctor:   PeacefulSide,
 	Witness:  PeacefulSide,
+	Sheriff:  PeacefulSide,
+	Maniac:   ManiacSide,
 }
 
 func ValidRoles(roles []Role) error {
@@ -38,6 +43,8 @@ func ValidRoles(roles []Role) error {
 		return errors.New("не может быть более одного доктора")
 	case roleToCnt[Witness] > 1:
 		return errors.New("не может быть более одной свидетельницы")
+	case roleToCnt[Maniac] > 1:
+		return errors.New("не может быть более одного маньяка")
 	default:
 		return nil
 	}

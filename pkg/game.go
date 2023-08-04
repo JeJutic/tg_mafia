@@ -27,7 +27,7 @@ func NewGame(eOutput EventOutput, code int, creator int64, roles []Role, close f
 }
 
 func (g *Game) AddMember(member int64, nick string) {
-	g.NickToUser[nick] = member // TODO: check if not busy
+	g.NickToUser[nick] = member
 	g.UserToNick[member] = nick
 
 	if len(g.NickToUser) == len(g.Roles) {
@@ -45,16 +45,6 @@ type Player struct {
 	User int64
 	Role Role
 }
-
-// func (g *Game) isMafiaAlive() bool {	//TODO: maniac
-// 	mafiaAlive := false
-// 	for role := range g.roles {
-// 		if role == MAFIA_ROLE {
-// 			mafiaAlive = true
-// 		}
-// 	}
-// 	return mafiaAlive
-// }
 
 func (g *Game) RandomPlayerQueue() []Player {
 	rand.Shuffle(len(g.Roles), func(i, j int) {

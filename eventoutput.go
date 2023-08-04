@@ -4,7 +4,7 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/jejutic/tg_mafia/pkg"
+	game "github.com/jejutic/tg_mafia/pkg"
 )
 
 const (
@@ -16,6 +16,14 @@ var roleToName = map[game.Role]string{
 	game.Peaceful: "мирный",
 	game.Doctor:   "врач",
 	game.Witness:  "свидетельница",
+	game.Sheriff:  "комиссар",
+	game.Maniac:   "маньяк",
+}
+
+var sideToName = map[game.Side]string{
+	game.MafiaSide:    "лагерь мафии",
+	game.PeacefulSide: "лагерь мирных",
+	game.ManiacSide:   "лагерь маньяка",
 }
 
 func rolesToString(roles []game.Role) string {
@@ -98,7 +106,7 @@ func (s *server) HandleUnableToVote(e game.UnableToVoteEvent) {
 }
 
 func (s *server) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
-	s.sendMessage(tgbotapi.NewMessage(e.User, "Вы уже проголосовали"))
+	s.sendMessage(newMessageWithoutKeyboard(e.User, "Вы уже проголосовали"))
 }
 
 func (s *server) HandleVotingEnded(e game.VotingEndedEvent) {
@@ -141,6 +149,14 @@ func (s *server) HandleNightAct(e game.NightActEvent) {
 		choose = "Выберите, кого лечить"
 	case game.Witness:
 		choose = "Выберите, кому вы доверяете - его не смогут ошибочно выгнать"
+	case game.Sheriff:
+		choose = "Выберите двух игроков, чтобы проверить, из разных ли они лагерей"
+	case game.Maniac:
+		if e.MafiaAlive {
+			choose = "Пока мафия жива, вы не можете никого выбрать"
+		} else {
+			choose = "Выбирайте жертву"
+		}
 	default:
 		choose = "Выбирайте"
 	}
@@ -167,9 +183,20 @@ func (s *server) HandleUnsupportedAct(e game.UnsupportedActEvent) {
 func (s *server) HandleActEnded(e game.ActEndedEvent) {
 	var message string
 	if e.Success {
-		message = "Цель выбрана"
+		if e.Player.Role == game.Sheriff {
+			message = "Они в одном лагере"
+		} else {
+			message = "Цель выбрана"
+		}
 	} else {
-		message = "Промах! Другая мафия выбрала другого"
+		if e.Player.Role == game.Sheriff {
+			message = "Они в разных лагерях"
+		} else if e.Player.Role == game.Mafia {
+			message = "Промах! Другая мафия выбрала другого"
+		} else {
+			message = "Случился баг"
+			log.Println("unexpected unsuccessful action of ", e.Player.Role)
+		}
 	}
 	message += "\n\n"
 
@@ -193,7 +220,7 @@ func (s *server) HandleNightEnded(e game.NightEndedEvent) {
 }
 
 func (s *server) HandleWin(e game.WinEvent) {
-	message := "Победили " + roleToName[e.Role] + "\n\n"
+	message := "Победил " + sideToName[e.Side] + "\n\n"
 
 	for _, nick := range e.Winners {
 		message += nick + "\n"

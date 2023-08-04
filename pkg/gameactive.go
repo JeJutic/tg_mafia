@@ -21,32 +21,42 @@ func (g *Game) NewGameActive(pQueue []Player) {
 	g.GActive.NewVoting(true)
 }
 
-func (ga *GameActive) checkForEnd() bool { //TODO: different for day and night
-	mafiaCnt := 0
+func (ga *GameActive) roleToCnt() map[Role]int {
+	roleToCnt := make(map[Role]int)
 	for _, player := range ga.pQueue {
-		if player.Role == Mafia {
-			mafiaCnt++
-		}
+		roleToCnt[player.Role]++
 	}
+	return roleToCnt
+}
 
-	var roleWinned Role
+func (ga *GameActive) mafiaAlive() bool {
+	return ga.roleToCnt()[Mafia] != 0
+}
+
+func (ga *GameActive) checkForEnd() bool { //TODO: different for day and night
+	roleToCnt := ga.roleToCnt()
+
+	var sideWinned Side
 	switch {
-	case mafiaCnt >= len(ga.pQueue)-mafiaCnt:
-		roleWinned = Mafia
-	case mafiaCnt == 0:
-		roleWinned = Peaceful
+	case roleToCnt[Mafia] >= len(ga.pQueue)-roleToCnt[Mafia] ||
+		(ga.night != nil && len(ga.pQueue)-2*roleToCnt[Mafia] == 1 && roleToCnt[Doctor] == 0):
+		sideWinned = MafiaSide
+	case roleToCnt[Maniac] == 1 && len(ga.pQueue) <= 2:
+		sideWinned = ManiacSide
+	case roleToCnt[Mafia] == 0:
+		sideWinned = PeacefulSide
 	default:
-		roleWinned = -1
+		sideWinned = -1
 	}
 
-	if roleWinned != -1 {
+	if sideWinned != -1 {
 		e := WinEvent{
 			Users: ga.game.GetUsers(),
-			Role:  roleWinned,
+			Side:  sideWinned,
 		}
 
 		for _, player := range ga.pQueue {
-			if roleToSide[player.Role] == roleToSide[roleWinned] {
+			if roleToSide[player.Role] == sideWinned {
 				e.Winners = append(e.Winners, ga.game.UserToNick[player.User])
 			}
 		}
@@ -62,15 +72,15 @@ func (ga *GameActive) checkForEnd() bool { //TODO: different for day and night
 
 // }
 
-// func (ga *GameActive) getPlayerFromUser(user int64) player {
-// 	for _, player := range ga.pQueue {
-// 		if player.user == user {
-// 			return player
-// 		}
-// 	}
-// 	log.Fatal("Unable to find the user")
-// 	return player{}
-// }
+func (ga *GameActive) userToPlayer(user int64) Player {
+	for _, player := range ga.pQueue {
+		if player.User == user {
+			return player
+		}
+	}
+	log.Fatal("Unable to find the user")
+	return Player{}
+}
 
 func remove(slice []Player, s int) []Player {
 	return append(slice[:s], slice[s+1:]...)
