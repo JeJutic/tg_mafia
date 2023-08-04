@@ -1,4 +1,4 @@
-module jejutic/tg_mafia
+module github.com/jejutic/tg_mafia
 
 go 1.20
 
