@@ -4,24 +4,26 @@ import (
 	"log"
 )
 
-type GameActive struct {
-	game      *Game
+// gameActive represents a started mafia game
+type gameActive struct {
+	*Game
 	pQueue    []Player //will be deleted from slice if dead
 	witnessed int64
 	healed    int64
-	voting    *Voting
-	night     *Night
+	voting    *voting
+	night     *night
 }
 
-func (g *Game) NewGameActive(pQueue []Player) {
-	g.GActive = &GameActive{
-		game:   g,
+// newGameActive sets gActive field in Game g with pQueue parameter set
+func (g *Game) newGameActive(pQueue []Player) {
+	g.GActive = &gameActive{
+		Game:   g,
 		pQueue: pQueue,
 	}
-	g.GActive.NewVoting(true)
+	g.GActive.newVoting(true)
 }
 
-func (ga *GameActive) roleToCnt() map[Role]int {
+func (ga *gameActive) roleToCnt() map[Role]int {
 	roleToCnt := make(map[Role]int)
 	for _, player := range ga.pQueue {
 		roleToCnt[player.Role]++
@@ -29,39 +31,39 @@ func (ga *GameActive) roleToCnt() map[Role]int {
 	return roleToCnt
 }
 
-func (ga *GameActive) mafiaAlive() bool {
+func (ga *gameActive) mafiaAlive() bool {
 	return ga.roleToCnt()[Mafia] != 0
 }
 
-func (ga *GameActive) checkForEnd() bool { //TODO: different for day and night
-	roleToCnt := ga.roleToCnt()
-
-	var sideWinned Side
+func checkForEnd(playerCnt int, roleToCnt map[Role]int, isNight bool) Side {
 	switch {
-	case roleToCnt[Mafia] >= len(ga.pQueue)-roleToCnt[Mafia] ||
-		(ga.night != nil && len(ga.pQueue)-2*roleToCnt[Mafia] == 1 && roleToCnt[Doctor] == 0):
-		sideWinned = MafiaSide
-	case roleToCnt[Maniac] == 1 && len(ga.pQueue) <= 2:
-		sideWinned = ManiacSide
-	case roleToCnt[Mafia] == 0:
-		sideWinned = PeacefulSide
+	case roleToCnt[Mafia] >= playerCnt-roleToCnt[Mafia] ||
+		(isNight && playerCnt-2*roleToCnt[Mafia] == 1 && roleToCnt[Doctor] == 0):
+		return MafiaSide
+	case roleToCnt[Maniac] == 1 && playerCnt <= 2:
+		return ManiacSide
+	case roleToCnt[Mafia] == 0 && roleToCnt[Maniac] == 0:
+		return PeacefulSide
 	default:
-		sideWinned = -1
+		return 0
 	}
+}
 
-	if sideWinned != -1 {
+func (ga *gameActive) checkForEnd() bool {
+
+	if sideWinned := checkForEnd(len(ga.pQueue), ga.roleToCnt(), ga.night != nil); sideWinned != 0 {
 		e := WinEvent{
-			Users: ga.game.GetUsers(),
+			Users: ga.GetUsers(),
 			Side:  sideWinned,
 		}
 
 		for _, player := range ga.pQueue {
 			if roleToSide[player.Role] == sideWinned {
-				e.Winners = append(e.Winners, ga.game.UserToNick[player.User])
+				e.Winners = append(e.Winners, ga.UserToNick[player.User])
 			}
 		}
-		ga.game.EOutput.HandleWin(e)
-		ga.game.StopGame(false)
+		ga.EOutput.HandleWin(e)
+		ga.StopGame(false)
 
 		return true
 	}
@@ -72,7 +74,7 @@ func (ga *GameActive) checkForEnd() bool { //TODO: different for day and night
 
 // }
 
-func (ga *GameActive) userToPlayer(user int64) Player {
+func (ga *gameActive) userToPlayer(user int64) Player {
 	for _, player := range ga.pQueue {
 		if player.User == user {
 			return player
@@ -86,7 +88,7 @@ func remove(slice []Player, s int) []Player {
 	return append(slice[:s], slice[s+1:]...)
 }
 
-func (ga *GameActive) removePlayer(user int64) {
+func (ga *gameActive) removePlayer(user int64) {
 	for i, player := range ga.pQueue {
 		if player.User == user {
 			ga.pQueue = remove(ga.pQueue, i)
@@ -96,10 +98,10 @@ func (ga *GameActive) removePlayer(user int64) {
 	log.Fatal("nobody to remove")
 }
 
-func (ga *GameActive) startDay() {
+func (ga *gameActive) startDay() {
 	ga.night = nil
 	if ga.voting == nil {
-		ga.NewVoting(false)
+		ga.newVoting(false)
 	}
 
 	if ga.checkForEnd() {
@@ -110,43 +112,43 @@ func (ga *GameActive) startDay() {
 		make(map[int64][]string),
 	}
 	for _, player := range ga.pQueue {
-		e.UserToCandidates[player.User] = ga.voting.memberCanVote(player.User)
+		e.UserToCandidates[player.User] = ga.voting.userCanVote(player.User)
 	}
-	ga.game.EOutput.HandleVotingStarted(e)
+	ga.EOutput.HandleVotingStarted(e)
 }
 
-func (ga *GameActive) startNight() {
+func (ga *gameActive) startNight() {
 	ga.voting = nil
-	ga.NewNight()
+	ga.newNight()
 
 	if ga.checkForEnd() {
 		return
 	}
 
-	ga.game.EOutput.HandleNightStarted(NightStartedEvent{
-		ga.game.GetUsers(),
-		ga.game.UserToNick[ga.pQueue[0].User],
+	ga.EOutput.HandleNightStarted(NightStartedEvent{
+		ga.GetUsers(),
+		ga.UserToNick[ga.pQueue[0].User],
 	})
 	ga.night.next()
 }
 
-func (ga *GameActive) votingConclusion() {
+func (ga *gameActive) votingConclusion() {
 
 	candidate := ga.voting.bestCandidate()
 	e := VotingEndedEvent{
-		Users:       ga.game.GetUsers(),
-		UserToNick:  ga.game.UserToNick,
+		Users:       ga.GetUsers(),
+		UserToNick:  ga.UserToNick,
 		UserToVoted: ga.voting.userToVoted,
 		Candidate:   candidate,
 	}
 	switch {
-	case candidate == ga.witnessed:
+	case candidate == ga.witnessed && candidate != 0:
 		e.Witness = true
 	case candidate != 0:
 		ga.removePlayer(candidate)
 	}
 
-	ga.game.EOutput.HandleVotingEnded(e)
+	ga.EOutput.HandleVotingEnded(e)
 	ga.startNight()
 }
 
@@ -159,7 +161,7 @@ func contains(elems []string, target string) bool {
 	return false
 }
 
-func (ga *GameActive) Handle(user int64, request string) {
+func (ga *gameActive) Handle(user int64, request string) {
 	if ga.voting != nil {
 		ga.voting.handleVote(user, request)
 	} else { //night

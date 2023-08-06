@@ -2,6 +2,7 @@ package game
 
 import "errors"
 
+// Role represents a role in mafia game
 type Role int
 
 const (
@@ -14,6 +15,7 @@ const (
 	Maniac
 )
 
+// Side represents a side in mafia game. Only one can win in a game
 type Side int
 
 const (
@@ -32,6 +34,7 @@ var roleToSide = map[Role]Side{ //mb not best that map isn't const
 	Maniac:   ManiacSide,
 }
 
+// ValidRoles returns nil error iff list of role-cards roles is valid for mafia game
 func ValidRoles(roles []Role) error {
 	roleToCnt := make(map[Role]int)
 	for _, role := range roles {

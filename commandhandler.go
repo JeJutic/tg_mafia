@@ -53,7 +53,13 @@ func (s *server) handleCommand(chatID int64, command string) {
 
 	switch words := strings.Split(command, " "); words[0][1:] {
 	case "create":
-		code := 1_000 + rand.Intn(9_000) // TODO: check if not busy
+		var code int
+		for  {
+			code = 1_000 + rand.Intn(9_000)
+			if _, exists := s.codeToGame[code]; !exists {
+				break
+			}
+		}
 
 		roles, err := parseRoles(words[1:])
 		if err != nil {
@@ -104,8 +110,10 @@ func (s *server) handleCommand(chatID int64, command string) {
 					return
 				}
 
-				if _, exists := game.NickToUser[nick]; exists {
-					s.sendMessage(tgbotapi.NewMessage(chatID, "В игре уже есть человек с таким ником"))
+				if err := game.AddMember(chatID, nick); err != nil {
+					s.sendMessage(tgbotapi.NewMessage(chatID, 
+						"Кажется, в игре уже есть человек с таким ником: " + err.Error(),
+					))
 					return
 				}
 
@@ -115,7 +123,7 @@ func (s *server) handleCommand(chatID int64, command string) {
 					message += nick + "\n"
 				}
 				s.sendMessage(tgbotapi.NewMessage(chatID, message))
-				game.AddMember(chatID, nick)
+				game.Start(game.RandomPlayerQueue())	// tries to start, ignores the error
 			} else {
 				s.sendMessage(tgbotapi.NewMessage(chatID, "Игра уже началась"))
 			}

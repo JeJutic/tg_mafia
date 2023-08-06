@@ -91,11 +91,11 @@ func (s *server) HandleVotingStarted(e game.VotingStartedEvent) {
 	for user, candidates := range e.UserToCandidates {
 		msg := tgbotapi.NewMessage(user, "Голосуйте")
 
-		var keyboard []tgbotapi.KeyboardButton
+		var keyboard [][]tgbotapi.KeyboardButton
 		for _, c := range candidates {
-			keyboard = append(keyboard, tgbotapi.NewKeyboardButton(c))
+			keyboard = append(keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(c)))
 		}
-		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard)
+		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
 		s.sendMessage(msg)
 	}
@@ -163,11 +163,11 @@ func (s *server) HandleNightAct(e game.NightActEvent) {
 
 	msg := tgbotapi.NewMessage(e.Player.User, choose)
 
-	var keyboard []tgbotapi.KeyboardButton
+	var keyboard [][]tgbotapi.KeyboardButton
 	for _, v := range e.Victims {
-		keyboard = append(keyboard, tgbotapi.NewKeyboardButton(v))
+		keyboard = append(keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(v)))
 	}
-	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard)
+	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
 	s.sendMessage(msg)
 }
