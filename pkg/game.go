@@ -3,6 +3,9 @@ package game
 import (
 	"errors"
 	"math/rand"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"golang.org/x/text/language"
 )
 
 // Game represents a mafia game either started or not

@@ -10,7 +10,7 @@ import (
 )
 
 type server struct {
-	bot        *tgbotapi.BotAPI
+	bot        *tgbotapi.BotAPI	//TODO: use interface
 	userToGame map[int64]*game.Game
 	codeToGame map[int]*game.Game
 }

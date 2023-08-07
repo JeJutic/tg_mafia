@@ -1,15 +1,24 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	game "github.com/jejutic/tg_mafia/pkg"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"golang.org/x/text/language"
 )
 
 const (
 	hider = ".\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n"
 )
+
+var bundle *i18n.Bundle
+
+func init() {
+	bundle = i18n.NewBundle(language.English)
+}
 
 var roleToName = map[game.Role]string{
 	game.Mafia:    "мафия",
@@ -36,6 +45,43 @@ func rolesToString(roles []game.Role) string {
 	}
 	return output
 }
+
+func (s *server) localizerFromUser(user int64) *i18n.Localizer {
+	member, err := s.bot.GetChatMember(tgbotapi.GetChatMemberConfig{
+		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+			ChatID: user,
+			UserID: user,
+		},
+	})
+	if err == nil {
+		log.Println("couldn't get user's language code: ", err)
+	}
+	if err != nil && member.User.LanguageCode == "ru" {
+		return i18n.NewLocalizer(bundle, language.Russian.String(), language.English.String())
+	} else {
+		return i18n.NewLocalizer(bundle, language.Russian.String(), language.English.String())
+	}
+}
+
+func (s *server) messageIDToText(user int64, messageID string, a ...any) string {
+	config := i18n.LocalizeConfig{
+		MessageID: messageID,
+	}
+	text, err := s.localizerFromUser(user).Localize(&config)
+	if err != nil {
+		log.Println("couldn't find localization for ", messageID)
+		text = "internal server error: unable to find messageID"
+	} else {
+		text = fmt.Sprintf(text, a)
+	}
+	return text
+}
+
+// func newMessage(user int64, text string) tgbotapi.MessageConfig {
+// 	msg := tgbotapi.NewMessage(user, text)
+// 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+// 	return msg
+// }
 
 func newMessageWithoutKeyboard(user int64, text string) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(user, text)
@@ -89,7 +135,7 @@ func (s *server) HandleFirstDay(e game.FirstDayEvent) {
 
 func (s *server) HandleVotingStarted(e game.VotingStartedEvent) {
 	for user, candidates := range e.UserToCandidates {
-		msg := tgbotapi.NewMessage(user, "Голосуйте")
+		msg := newMessageWithoutKeyboard(user, s.messageIDToText(user, "vote"))
 
 		var keyboard [][]tgbotapi.KeyboardButton
 		for _, c := range candidates {
@@ -102,11 +148,11 @@ func (s *server) HandleVotingStarted(e game.VotingStartedEvent) {
 }
 
 func (s *server) HandleUnableToVote(e game.UnableToVoteEvent) {
-	s.sendMessage(tgbotapi.NewMessage(e.User, "Вы не можете за него проголосовать"))
+	s.sendMessage(newMessageWithoutKeyboard(e.User, s.messageIDToText(e.User, "unable_to_vote")))
 }
 
 func (s *server) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
-	s.sendMessage(newMessageWithoutKeyboard(e.User, "Вы уже проголосовали"))
+	s.sendMessage(newMessageWithoutKeyboard(e.User, s.messageIDToText(e.User, "already_voted")))
 }
 
 func (s *server) HandleVotingEnded(e game.VotingEndedEvent) {
@@ -115,7 +161,7 @@ func (s *server) HandleVotingEnded(e game.VotingEndedEvent) {
 	for user, voted := range e.UserToVoted {
 		message += e.UserToNick[user]
 		if voted != -1 {
-			message += " проголосовал за " + e.UserToNick[voted] + "\n"
+			message += " проголосовал за " + s.messageIDToText(e.User, "already_voted") + e.UserToNick[voted] + "\n"
 		} else {
 			message += " скипнул\n"
 		}
