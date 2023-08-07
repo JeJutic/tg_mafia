@@ -1,0 +1,6 @@
+with-expecter: true
+packages:
+    github.com/jejutic/tg_mafia/pkg:
+        interfaces:
+            EventOutput:
+                config:
