@@ -18,12 +18,14 @@ var roleToName = map[game.Role]string{
 	game.Witness:  "свидетельница",
 	game.Sheriff:  "комиссар",
 	game.Maniac:   "маньяк",
+	game.Guesser:  "разгадыватель",
 }
 
 var sideToName = map[game.Side]string{
 	game.MafiaSide:    "лагерь мафии",
 	game.PeacefulSide: "лагерь мирных",
 	game.ManiacSide:   "лагерь маньяка",
+	game.GuesserSide:  "лагерь разгадывателя",
 }
 
 func rolesToString(roles []game.Role) string {
@@ -157,6 +159,12 @@ func (s *server) HandleNightAct(e game.NightActEvent) {
 		} else {
 			choose = "Выбирайте жертву"
 		}
+	case game.Guesser:
+		choose = `
+		Вы можете попытаться угадать роль одного из игроков. 
+		Если вы окажетесь верны, он умрет, если его не спасут или не убьют вас. 
+		Если вы угадаете неверно, вы умрете, если вас не спасут
+		`
 	default:
 		choose = "Выбирайте"
 	}
@@ -211,10 +219,17 @@ func (s *server) HandleActEnded(e game.ActEndedEvent) {
 func (s *server) HandleNightEnded(e game.NightEndedEvent) {
 
 	message := hider + "Этой ночью\n"
-	if e.Killed == "" {
+	if len(e.Died) == 0 {
 		message += "Никого не убили\n"
 	} else {
-		message += "Убили " + e.Killed + "\n"
+		message += "Убили "
+		for i, died := range e.Died {
+			message += died
+			if i != len(e.Died) - 1 {
+				message += ", "
+			}
+		}
+		message += "\n"
 	}
 	s.sendAll(e.Users, message)
 }

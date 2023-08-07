@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	. "github.com/jejutic/tg_mafia/pkg"
-	. "github.com/jejutic/tg_mafia/pkg/mocks/github.com/jejutic/tg_mafia/pkg"
+	. "github.com/jejutic/tg_mafia/mocks/github.com/jejutic/tg_mafia/pkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func Test_scenario1(t *testing.T) {
 	mockEOutput := NewMockEventOutput(t)
 	var closed *bool = pbool(false)
 
-	nickToUser := map[string]int64 {
+	nickToUser := map[string]int64{
 		"a": 1,
 		"b": 2,
 		"c": 3,
@@ -43,7 +43,7 @@ func Test_scenario1(t *testing.T) {
 		"e": 5,
 		"f": 6,
 	}
-	players := []Player {
+	players := []Player{
 		{1, Mafia},
 		{2, Mafia},
 		{3, Peaceful},
@@ -52,7 +52,7 @@ func Test_scenario1(t *testing.T) {
 		{6, Peaceful},
 	}
 
-	g := NewGame(mockEOutput, 1, 1, rolesFromPlayers(players), func(g *Game) {*closed = true})
+	g := NewGame(mockEOutput, 1, 1, rolesFromPlayers(players), func(g *Game) { *closed = true })
 	for nick, user := range nickToUser {
 		assert.Nil(g.AddMember(user, nick), "expected no error when inserting players")
 	}
@@ -60,7 +60,7 @@ func Test_scenario1(t *testing.T) {
 
 	mockEOutput.EXPECT().HandleFirstDay(FirstDayEvent{
 		UserToNick: userToNick(nickToUser),
-		Players: players,
+		Players:    players,
 	}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -132,7 +132,7 @@ func Test_scenario1(t *testing.T) {
 			}
 			assert.Equal(victimCnt, len(e.Victims), "unexpected number of victims (buttons)")
 
-			if *acted == false {	// UnexpectedActTrialEvent
+			if *acted == false { // UnexpectedActTrialEvent
 				if e.Player.User == 1 {
 					g.GActive.Handle(2, "c")
 				} else {
@@ -163,15 +163,15 @@ func Test_scenario1(t *testing.T) {
 		}).Times(6)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed)
+			assert.Equal(0, len(e.Died), "unexpected player dead")
 		}).Once()
 
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
-	Run(func(e VotingStartedEvent) {
-		for _, candidates := range e.UserToCandidates {
-			assert.Equal(6, len(candidates), "candidates for voting number")
-		}
-	}).Once()
+		Run(func(e VotingStartedEvent) {
+			for _, candidates := range e.UserToCandidates {
+				assert.Equal(6, len(candidates), "candidates for voting number")
+			}
+		}).Once()
 
 	g.GActive.Handle(6, "skip")
 
@@ -221,7 +221,7 @@ func Test_scenario1(t *testing.T) {
 		}).Times(6)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("c", e.Killed, "unexpected person dead")
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
 		}).Once()
 
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
@@ -265,7 +265,7 @@ func Test_scenario1(t *testing.T) {
 		}).Times(5)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "the person should have been saved by doctor")
+			assert.Equal(0, len(e.Died), "the person should have been saved by doctor")
 		}).Once()
 
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
@@ -274,7 +274,7 @@ func Test_scenario1(t *testing.T) {
 				assert.Equal(5, len(candidates), "candidates for voting number")
 			}
 		}).Once()
-	
+
 	g.GActive.Handle(6, "skip")
 
 	g.GActive.Handle(1, "b")
@@ -309,7 +309,7 @@ func Test_scenario1(t *testing.T) {
 		}).Times(4)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("f", e.Killed, "unexpected person dead")
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -350,7 +350,7 @@ func Test_scenario1(t *testing.T) {
 		}).Times(3)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "doctor was supposed to save himself")
+			assert.Equal(0, len(e.Died), "doctor was supposed to save himself")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -397,7 +397,7 @@ func Test_scenario2(t *testing.T) {
 	assert := assert.New(t)
 	mockEOutput := NewMockEventOutput(t)
 
-	nickToUser := map[string]int64 {
+	nickToUser := map[string]int64{
 		"a": 1,
 		"b": 2,
 		"c": 3,
@@ -405,7 +405,7 @@ func Test_scenario2(t *testing.T) {
 		"e": 5,
 		"f": 6,
 	}
-	players := []Player {
+	players := []Player{
 		{1, Mafia},
 		{2, Mafia},
 		{3, Maniac},
@@ -450,13 +450,13 @@ func Test_scenario2(t *testing.T) {
 			case Witness:
 				victim = "e"
 			case Sheriff:
-				assert.Equal(10, len(e.Victims), "expected another cnt of sheriff's options")
+				assert.Equal(11, len(e.Victims), "expected another cnt of sheriff's options")
 				for nick, user := range nickToUser {
 					if user != e.Player.User {
 						assert.Equal(4, containsIn(e.Victims, nick), "expected another sheriff's options")
 					}
 				}
-				victim =  "a b"
+				victim = "a b"
 			case Maniac:
 				assert.Equal(1, len(e.Victims), "maniac has victims when mafia alive")
 				victim = e.Victims[0]
@@ -471,7 +471,7 @@ func Test_scenario2(t *testing.T) {
 		}).Times(6)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "doctor was supposed to save himself")
+			assert.Equal(0, len(e.Died), "doctor was supposed to save himself")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -504,7 +504,7 @@ func Test_scenario2(t *testing.T) {
 			case Witness:
 				victim = "d"
 			case Sheriff:
-				victim =  "d e"
+				victim = "d e"
 			case Maniac:
 				assert.Equal(1, len(e.Victims), "maniac has victims when mafia alive")
 				victim = e.Victims[0]
@@ -519,7 +519,7 @@ func Test_scenario2(t *testing.T) {
 		}).Times(6)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("e", e.Killed, "unexpected player dead")
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -549,7 +549,7 @@ func Test_scenario2(t *testing.T) {
 			case Doctor:
 				victim = "f"
 			case Sheriff:
-				victim =  "a c"
+				victim = "a c"
 			case Maniac:
 				assert.Equal(1, len(e.Victims), "maniac has victims when mafia alive")
 				victim = e.Victims[0]
@@ -568,7 +568,7 @@ func Test_scenario2(t *testing.T) {
 		}).Times(5)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "unexpected player dead")
+			assert.Equal(0, len(e.Died), "unexpected player dead")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -598,8 +598,8 @@ func Test_scenario2(t *testing.T) {
 			case Doctor:
 				victim = "d"
 			case Sheriff:
-				assert.Equal(3, len(e.Victims), "expected another cnt of sheriff's options")
-				victim =  "b c"
+				assert.Equal(4, len(e.Victims), "expected another cnt of sheriff's options")
+				victim = "b c"
 			case Maniac:
 				assert.Equal(1, len(e.Victims), "maniac has victims when mafia alive")
 				victim = e.Victims[0]
@@ -618,7 +618,7 @@ func Test_scenario2(t *testing.T) {
 		}).Times(4)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "doctor should have saved himself")
+			assert.Equal(0, len(e.Died), "doctor should have saved himself")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -645,8 +645,8 @@ func Test_scenario2(t *testing.T) {
 			case Doctor:
 				victim = "f"
 			case Sheriff:
-				assert.Equal(1, len(e.Victims), "expected another cnt of sheriff's options")
-				victim =  e.Victims[0]
+				assert.Equal(2, len(e.Victims), "expected another cnt of sheriff's options")
+				victim = "c d"
 			case Maniac:
 				assert.Equal(2, len(e.Victims), "unexpected number of maniac potential victims")
 				victim = "f"
@@ -656,14 +656,14 @@ func Test_scenario2(t *testing.T) {
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
 			if e.Player.Role == Sheriff {
-				assert.Equal(false, e.Success, "Sheriff and maniac are supposed to be in different sides")
+				assert.Equal(false, e.Success, "Doctor and maniac are supposed to be in different sides")
 			} else {
 				assert.Equal(true, e.Success, "all actions are supposed to be successful")
 			}
 		}).Times(3)
 	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
 		Run(func(e NightEndedEvent) {
-			assert.Equal("", e.Killed, "doctor should have saved sheriff")
+			assert.Equal(0, len(e.Died), "doctor should have saved sheriff")
 		}).Once()
 	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
 		Run(func(e VotingStartedEvent) {
@@ -688,4 +688,232 @@ func Test_scenario2(t *testing.T) {
 		}).Once()
 
 	g.GActive.Handle(6, "d")
+}
+
+func Test_scenario3(t *testing.T) {
+	assert := assert.New(t)
+	mockEOutput := NewMockEventOutput(t)
+
+	nickToUser := map[string]int64{
+		"a": 1,
+		"b": 2,
+		"c": 3,
+		"d": 4,
+		"e": 5,
+		"f": 6,
+	}
+	players := []Player{
+		{1, Mafia},
+		{2, Maniac},
+		{3, Guesser},
+		{4, Doctor},
+		{5, Peaceful},
+		{6, Sheriff},
+	}
+
+	g := NewGame(mockEOutput, 1, 1, rolesFromPlayers(players), func(g *Game) {})
+	for nick, user := range nickToUser {
+		assert.Nil(g.AddMember(user, nick), "expected no error when inserting players")
+	}
+
+	mockEOutput.EXPECT().HandleFirstDay(mock.Anything).Once()
+	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
+		Run(func(e VotingStartedEvent) {
+			for _, candidates := range e.UserToCandidates {
+				assert.Equal(6, len(candidates), "candidates for voting number")
+			}
+		}).Once()
+	g.Start(players)
+
+	g.GActive.Handle(1, "c")
+	g.GActive.Handle(2, "a")
+	g.GActive.Handle(3, "skip")
+	g.GActive.Handle(4, "a")
+	g.GActive.Handle(5, "b")
+
+	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
+		Run(func(e VotingEndedEvent) {
+			assert.EqualValues(0, e.Candidate, "expected draw")
+		}).Once()
+	mockEOutput.EXPECT().HandleNightStarted(mock.Anything).Once()
+	mockEOutput.EXPECT().HandleNightAct(mock.Anything).
+		Run(func(e NightActEvent) {
+			var victim string
+			switch e.Player.Role {
+			case Mafia:
+				victim = "e"
+			case Doctor:
+				victim = "d"
+			case Sheriff:
+				victim = "a c"
+			case Guesser:
+				assert.Equal(26, len(e.Victims), "expected another cnt of guesser's options")
+				for nick, user := range nickToUser {
+					if user != e.Player.User {
+						assert.Equal(5, containsIn(e.Victims, nick), "expected another guesser's options")
+					}
+				}
+				victim = e.Victims[0]
+			default:
+				victim = e.Victims[0]
+			}
+			g.GActive.Handle(e.Player.User, victim)
+		}).Times(6)
+	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
+		Run(func(e ActEndedEvent) {
+			if e.Player.Role == Sheriff {
+				assert.Equal(false, e.Success, "mafia and guesser are supposed to be in different sides")
+			} else {
+				assert.Equal(true, e.Success, "all actions are supposed to be successful")
+			}
+		}).Times(6)
+	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
+		Run(func(e NightEndedEvent) {
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
+		}).Once()
+	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
+		Run(func(e VotingStartedEvent) {
+			for _, candidates := range e.UserToCandidates {
+				assert.Equal(5, len(candidates), "candidates for voting number")
+			}
+		}).Once()
+
+	g.GActive.Handle(6, "skip")
+
+	g.GActive.Handle(1, "c")
+	g.GActive.Handle(2, "a")
+	g.GActive.Handle(3, "skip")
+	g.GActive.Handle(4, "a")
+
+	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
+		Run(func(e VotingEndedEvent) {
+			assert.EqualValues(0, e.Candidate, "expected draw")
+		}).Once()
+	mockEOutput.EXPECT().HandleNightStarted(mock.Anything).Once()
+	mockEOutput.EXPECT().HandleNightAct(mock.Anything).
+		Run(func(e NightActEvent) {
+			var victim string
+			switch e.Player.Role {
+			case Mafia:
+				victim = "f"
+			case Doctor:
+				victim = "f"
+			case Sheriff:
+				victim = "b c"
+			case Guesser:
+				assert.Equal(21, len(e.Victims), "expected another cnt of guesser's options")
+				victim = "a мафия"
+			default:
+				victim = e.Victims[0]
+			}
+			g.GActive.Handle(e.Player.User, victim)
+		}).Times(5)
+	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
+		Run(func(e ActEndedEvent) {
+			if e.Player.Role == Sheriff {
+				assert.Equal(false, e.Success, "maniac and guesser are supposed to be in different sides")
+			} else {
+				assert.Equal(true, e.Success, "all actions are supposed to be successful")
+			}
+		}).Times(5)
+	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
+		Run(func(e NightEndedEvent) {
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
+		}).Once()
+	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
+		Run(func(e VotingStartedEvent) {
+			for _, candidates := range e.UserToCandidates {
+				assert.Equal(4, len(candidates), "candidates for voting number")
+			}
+		}).Once()
+
+	g.GActive.Handle(6, "skip")
+
+	g.GActive.Handle(2, "c")
+	g.GActive.Handle(3, "skip")
+	g.GActive.Handle(4, "skip")
+
+	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
+		Run(func(e VotingEndedEvent) {
+			assert.EqualValues(0, e.Candidate, "expected draw")
+		}).Once()
+	mockEOutput.EXPECT().HandleNightStarted(mock.Anything).Once()
+	mockEOutput.EXPECT().HandleNightAct(mock.Anything).
+		Run(func(e NightActEvent) {
+			var victim string
+			switch e.Player.Role {
+			case Maniac:
+				victim = "d"
+			case Doctor:
+				victim = "b"
+			case Sheriff:
+				victim = "c d"
+			case Guesser:
+				victim = e.Victims[0]
+			}
+			g.GActive.Handle(e.Player.User, victim)
+		}).Times(4)
+	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
+		Run(func(e ActEndedEvent) {
+			if e.Player.Role == Sheriff {
+				assert.Equal(false, e.Success, "doctor and guesser are supposed to be in different sides")
+			} else {
+				assert.Equal(true, e.Success, "all actions are supposed to be successful")
+			}
+		}).Times(4)
+	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
+		Run(func(e NightEndedEvent) {
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
+		}).Once()
+	mockEOutput.EXPECT().HandleVotingStarted(mock.Anything).
+		Run(func(e VotingStartedEvent) {
+			for _, candidates := range e.UserToCandidates {
+				assert.Equal(3, len(candidates), "candidates for voting number")
+			}
+		}).Once()
+
+	g.GActive.Handle(6, "skip")
+
+	g.GActive.Handle(2, "c")
+	g.GActive.Handle(3, "skip")
+
+	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
+		Run(func(e VotingEndedEvent) {
+			assert.EqualValues(0, e.Candidate, "expected draw")
+		}).Once()
+	mockEOutput.EXPECT().HandleNightStarted(mock.Anything).Once()
+	mockEOutput.EXPECT().HandleNightAct(mock.Anything).
+		Run(func(e NightActEvent) {
+			var victim string
+			switch e.Player.Role {
+			case Maniac:
+				victim = "c"
+			case Sheriff:
+				victim = "b c"
+			case Guesser:
+				assert.Equal(11, len(e.Victims), "expected another cnt of guesser's options")
+				victim = "b маньяк"
+			}
+			g.GActive.Handle(e.Player.User, victim)
+		}).Times(3)
+	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
+		Run(func(e ActEndedEvent) {
+			if e.Player.Role == Sheriff {
+				assert.Equal(false, e.Success, "doctor and guesser are supposed to be in different sides")
+			} else {
+				assert.Equal(true, e.Success, "all actions are supposed to be successful")
+			}
+		}).Times(3)
+	mockEOutput.EXPECT().HandleNightEnded(mock.Anything).
+		Run(func(e NightEndedEvent) {
+			assert.Equal(1, len(e.Died), "unexpected number of people dead")
+		}).Once()
+	
+	mockEOutput.EXPECT().HandleWin(mock.Anything).
+		Run(func(e WinEvent) {
+			assert.Equal(ManiacSide, e.Side, "unexpected side won")
+			assert.Equal(1, len(e.Winners), "unexpected game winners count")
+		}).Once()
+
+	g.GActive.Handle(6, "skip")
 }

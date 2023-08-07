@@ -41,6 +41,8 @@ func parseRoles(tokens []string) ([]game.Role, error) {
 			roles[i] = game.Sheriff
 		case "маньяк", "ман", "убийца":
 			roles[i] = game.Maniac
+		case "разгадыватель", "раз", "guesser":
+			roles[i] = game.Guesser
 		default:
 			err := errors.New("Неизвестный токен роли: " + token)
 			return roles, err
