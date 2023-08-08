@@ -9,7 +9,7 @@ Currently 4 sides availible:
 
 ## Requirements
 
-* **Golang** [1.14+]
+* **Golang** [1.20+]
 
 ## Libraries used
 
