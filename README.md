@@ -17,3 +17,37 @@ Currently 4 sides availible:
 Golang bindings for the Telegram Bot API
 * [Mockery](https://github.com/vektra/mockery)\
 A mock code autogenerator for Go
+
+## Usage
+
+Program tries to obtain environment variable `TELEGRAM_APITOKEN`
+at start-up which will be used as a [bot token](https://core.telegram.org/bots/api#authorizing-your-bot).
+
+_Interaction with bot has not yet been translated from Russian._
+
+Команды для ввода боту:
+
+* `/create [тэг роли [тэг роли [тэг роли [...]]]]`\
+  Создает игровую комнату с _картами ролей_ соответствующими 
+  указанным тэгам.
+  
+  Тэги:
+  - Мафия: мафия, маф
+  - Мирный: мирный, мир
+  - Врач: врач, доктор, док
+  - Свидетельница: свидетельница, свид
+  - Комиссар: комиссар, ком, шериф
+  - Маньяк: маньяк, ман, убийца
+  - Разгадыватель: разгадыватель, раз
+</br>
+</br>
+* `/join _код-комнаты_ [никнейм]` (или простая форма - `_код-комнаты_ [никнейм]`)\
+  Присодиняет пользователя к игровой комнате с еще не начавшейся
+  игрой. Когда никнейм не указан, используется telegram username.
+  Когда число игроков становится равно числу _карт ролей_, указанных
+  при создании, игра автоматически начинается. Карты ролей
+  распределяются случайным образом.
+
+* `/stop`\
+  Останавливает комнату игры, в которой сейчас находится игрок.
+  Возобновление на данный момент не предусмотрено.
