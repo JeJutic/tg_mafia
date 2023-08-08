@@ -7,6 +7,8 @@ Currently 4 sides availible:
 * Maniac side: Maniac role
 * Role Guesser side: Role Guesser role
 
+Godoc for package `game` is available [here](https://pkg.go.dev/github.com/jejutic/tg_mafia/pkg).
+
 ## Requirements
 
 * **Golang** [1.20+]
