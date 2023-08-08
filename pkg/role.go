@@ -13,6 +13,7 @@ const (
 	Witness
 	Sheriff
 	Maniac
+	Guesser
 )
 
 // Side represents a side in mafia game. Only one can win in a game
@@ -23,7 +24,18 @@ const (
 	MafiaSide
 	PeacefulSide
 	ManiacSide
+	GuesserSide
 )
+
+var roleToName = map[Role]string{
+	Mafia:    "мафия",
+	Peaceful: "мирный",
+	Doctor:   "врач",
+	Witness:  "свидетельница",
+	Sheriff:  "комиссар",
+	Maniac:   "маньяк",
+	Guesser:  "разгадыватель",
+}
 
 var roleToSide = map[Role]Side{ //mb not best that map isn't const
 	Mafia:    MafiaSide,
@@ -32,6 +44,7 @@ var roleToSide = map[Role]Side{ //mb not best that map isn't const
 	Witness:  PeacefulSide,
 	Sheriff:  PeacefulSide,
 	Maniac:   ManiacSide,
+	Guesser:  GuesserSide,
 }
 
 // ValidRoles returns nil error iff list of role-cards roles is valid for mafia game
@@ -48,6 +61,8 @@ func ValidRoles(roles []Role) error {
 		return errors.New("не может быть более одной свидетельницы")
 	case roleToCnt[Maniac] > 1:
 		return errors.New("не может быть более одного маньяка")
+	case roleToCnt[Guesser] > 1:
+		return errors.New("не может быть более одного разгадывателя")
 	default:
 		return nil
 	}

@@ -28,24 +28,46 @@ func (ga *gameActive) roleToCnt() map[Role]int {
 	for _, player := range ga.pQueue {
 		roleToCnt[player.Role]++
 	}
+	for _, role := range ga.Roles {	//important for gusser
+		if roleToCnt[role] == 0 {
+			roleToCnt[role] = 0
+		}
+	}
 	return roleToCnt
 }
 
 func (ga *gameActive) mafiaAlive() bool {
-	return ga.roleToCnt()[Mafia] != 0
+	return ga.roleToCnt()[Mafia] > 0
+}
+
+func (ga *gameActive) mafiaOrManiacAlive() bool {
+	return ga.mafiaAlive() || ga.roleToCnt()[Maniac] > 0
 }
 
 func checkForEnd(playerCnt int, roleToCnt map[Role]int, isNight bool) Side {
-	switch {
-	case roleToCnt[Mafia] >= playerCnt-roleToCnt[Mafia] ||
-		(isNight && playerCnt-2*roleToCnt[Mafia] == 1 && roleToCnt[Doctor] == 0):
-		return MafiaSide
-	case roleToCnt[Maniac] == 1 && playerCnt <= 2:
-		return ManiacSide
-	case roleToCnt[Mafia] == 0 && roleToCnt[Maniac] == 0:
-		return PeacefulSide
-	default:
-		return 0
+	if roleToCnt[Guesser] == 0 {
+		switch {
+		case roleToCnt[Mafia] >= playerCnt-roleToCnt[Mafia] ||
+			(isNight && playerCnt-2*roleToCnt[Mafia] == 1 && roleToCnt[Doctor] == 0):
+			return MafiaSide
+		case roleToCnt[Maniac] == 1 && playerCnt <= 2:
+			return ManiacSide
+		case roleToCnt[Mafia] == 0 && roleToCnt[Maniac] == 0:
+			return PeacefulSide
+		default:
+			return 0
+		}
+	} else {	//roleToCnt[Guesser] == 1
+		switch {
+		case roleToCnt[Mafia] == 1 && playerCnt == 2:
+			return MafiaSide
+		case roleToCnt[Maniac] == 1 && playerCnt == 2:
+			return ManiacSide
+		case playerCnt == 1:
+			return GuesserSide
+		default:
+			return 0
+		}
 	}
 }
 

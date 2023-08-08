@@ -7,6 +7,7 @@ type night struct {
 	gActive   *gameActive
 	offset    int
 	shot      int64
+	guessed   int64
 	healed    int64
 	witnessed int64
 }
@@ -24,6 +25,8 @@ func (n *night) playerCanAct(member Player) []string {
 	if member.Role == Peaceful || (member.Role == Maniac && n.gActive.mafiaAlive()) {
 		list = append(list, "сделать ничего")
 		return list
+	} else if member.Role == Sheriff || (member.Role == Guesser && n.gActive.mafiaOrManiacAlive()) {
+		list = append(list, skip)
 	}
 	for _, player := range n.gActive.pQueue {
 		switch member.Role {
@@ -53,6 +56,12 @@ func (n *night) playerCanAct(member Player) []string {
 			if player.User != member.User {
 				list = append(list, n.gActive.UserToNick[player.User])
 			}
+		case Guesser:
+			for role := range n.gActive.roleToCnt() {
+				if player.User != member.User && role != Guesser {
+					list = append(list, n.gActive.UserToNick[player.User] + " " + roleToName[role])
+				}
+			} 
 		}
 	}
 	return list
@@ -81,15 +90,28 @@ func (n *night) handleAct(user int64, victim string) {
 			case Witness:
 				n.witnessed = n.gActive.NickToUser[victim]
 			case Sheriff:
-				victims := strings.Split(victim, " ")
-				vRole := [2]Role{}
-				for i, v := range victims {
-					vRole[i] = n.gActive.userToPlayer(n.gActive.NickToUser[v]).Role
+				if victim != skip {
+					victims := strings.Split(victim, " ")
+					vRole := [2]Role{}
+					for i, v := range victims {
+						vRole[i] = n.gActive.userToPlayer(n.gActive.NickToUser[v]).Role
+					}
+					e.Success = roleToSide[vRole[0]] == roleToSide[vRole[1]]
 				}
-				e.Success = roleToSide[vRole[0]] == roleToSide[vRole[1]]
 			case Maniac:
 				if !n.gActive.mafiaAlive() {
 					n.shot = n.gActive.NickToUser[victim]
+				}
+			case Guesser:
+				if victim != skip {
+					victimAndRole := strings.Split(victim, " ")
+					vUser := n.gActive.NickToUser[victimAndRole[0]]
+					role := victimAndRole[1]
+					if roleToName[n.gActive.userToPlayer(vUser).Role] == role {
+						n.guessed = vUser
+					} else {
+						n.guessed = user
+					}
 				}
 			}
 
@@ -124,8 +146,13 @@ func (n *night) next() {
 		e := NightEndedEvent{
 			Users: n.gActive.GetUsers(),
 		}
-		if n.shot != 0 && n.shot != n.healed {
-			e.Killed = n.gActive.UserToNick[n.shot]
+		if n.guessed != 0 && n.guessed != n.healed &&
+				!(n.shot != 0 && n.shot != n.healed && n.gActive.userToPlayer(n.shot).Role == Guesser) {
+			e.Died = append(e.Died, n.gActive.UserToNick[n.guessed])
+			n.gActive.removePlayer(n.guessed)
+		}	//order between guesser and shot is important because of userToPlayer call
+		if n.shot != 0 && n.shot != n.healed && (len(e.Died) == 0 || n.guessed != n.shot) {
+			e.Died = append(e.Died, n.gActive.UserToNick[n.shot])
 			n.gActive.removePlayer(n.shot)
 		}
 		n.gActive.healed = n.healed
