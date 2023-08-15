@@ -2,6 +2,7 @@ package game
 
 import (
 	"log"
+	"runtime/debug"
 )
 
 // gameActive represents a started mafia game
@@ -189,4 +190,12 @@ func (ga *gameActive) Handle(user int64, request string) {
 	} else { //night
 		ga.night.handleAct(user, request)
 	}
+
+	defer func() {
+        if r := recover(); r != nil {
+            log.Println("stacktrace from panic: \n" + string(debug.Stack()))
+
+			ga.Game.StopGame(true)
+        }
+    }()
 }
