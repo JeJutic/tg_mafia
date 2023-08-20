@@ -29,7 +29,7 @@ func (ga *gameActive) roleToCnt() map[Role]int {
 	for _, player := range ga.pQueue {
 		roleToCnt[player.Role]++
 	}
-	for _, role := range ga.Roles {	//important for gusser
+	for _, role := range ga.Roles { //important for gusser
 		if roleToCnt[role] == 0 {
 			roleToCnt[role] = 0
 		}
@@ -58,7 +58,7 @@ func checkForEnd(playerCnt int, roleToCnt map[Role]int, isNight bool) Side {
 		default:
 			return 0
 		}
-	} else {	//roleToCnt[Guesser] == 1
+	} else { //roleToCnt[Guesser] == 1
 		switch {
 		case roleToCnt[Mafia] == 1 && playerCnt == 2:
 			return MafiaSide
@@ -192,10 +192,10 @@ func (ga *gameActive) Handle(user int64, request string) {
 	}
 
 	defer func() {
-        if r := recover(); r != nil {
-            log.Println("stacktrace from panic: \n" + string(debug.Stack()))
+		if r := recover(); r != nil {
+			log.Println("stacktrace from panic: \n" + string(debug.Stack()))
 
 			ga.Game.StopGame(true)
-        }
-    }()
+		}
+	}()
 }

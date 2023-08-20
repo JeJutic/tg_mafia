@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/jejutic/tg_mafia/pkg"
 	. "github.com/jejutic/tg_mafia/mocks/github.com/jejutic/tg_mafia/pkg"
+	. "github.com/jejutic/tg_mafia/pkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -908,7 +908,7 @@ func Test_scenario3(t *testing.T) {
 		Run(func(e NightEndedEvent) {
 			assert.Equal(1, len(e.Died), "unexpected number of people dead")
 		}).Once()
-	
+
 	mockEOutput.EXPECT().HandleWin(mock.Anything).
 		Run(func(e WinEvent) {
 			assert.Equal(ManiacSide, e.Side, "unexpected side won")

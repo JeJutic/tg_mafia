@@ -89,8 +89,8 @@ type ActEndedEvent struct {
 
 // NightEndedEvent represents results of night ended
 type NightEndedEvent struct {
-	Users []int64 // slice of all players' (including dead) ids
-	Died  []string  // nick of player who died this night
+	Users []int64  // slice of all players' (including dead) ids
+	Died  []string // nick of player who died this night
 }
 
 // WinEvent represents win of one of the sides

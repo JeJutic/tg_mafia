@@ -39,31 +39,9 @@ func rolesToString(roles []game.Role) string {
 	return output
 }
 
-func newMessageWithoutKeyboard(user int64, text string) tgbotapi.MessageConfig {
-	msg := tgbotapi.NewMessage(user, text)
-	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	return msg
-}
-
-func (s *server) sendMessage(msg tgbotapi.MessageConfig) { //TODO: panicing if haven't sent?
-	for i := 0; i < 2; i++ {
-		if _, err := s.bot.Send(msg); err == nil {
-			return
-		} else {
-			log.Println("Unable to send from ", i, " trials: ", err)
-		}
-	}
-}
-
-func (s *server) sendAll(users []int64, text string) {
-	for _, user := range users {
-		s.sendMessage(newMessageWithoutKeyboard(user, text))
-	}
-}
-
-func (s *server) HandleFirstDay(e game.FirstDayEvent) {
+func (ms mafiaServer[T]) HandleFirstDay(e game.FirstDayEvent) {
 	for _, player := range e.Players {
-		message := "Ваша роль: " + roleToName[player.Role] + "\n"
+		text := "Ваша роль: " + roleToName[player.Role] + "\n"
 
 		var sidemates []string
 		if player.Role == game.Mafia {
@@ -74,44 +52,43 @@ func (s *server) HandleFirstDay(e game.FirstDayEvent) {
 			}
 		}
 		if len(sidemates) != 0 {
-			message += "Ваши напарники: "
+			text += "Ваши напарники: "
 			for i, mate := range sidemates {
-				message += mate
+				text += mate
 				if i != len(sidemates)-1 {
-					message += ", "
+					text += ", "
 				}
 			}
-			message += "\n"
+			text += "\n"
 		}
 
-		message += hider
-		s.sendMessage(newMessageWithoutKeyboard(player.User, message))
+		text += hider
+		ms.sendMessage(serverMessage{
+			user: player.User,
+			text: text,
+		})
 	}
 }
 
-func (s *server) HandleVotingStarted(e game.VotingStartedEvent) {
+func (ms mafiaServer[T]) HandleVotingStarted(e game.VotingStartedEvent) {
 	for user, candidates := range e.UserToCandidates {
-		msg := tgbotapi.NewMessage(user, "Голосуйте")
-
-		var keyboard [][]tgbotapi.KeyboardButton
-		for _, c := range candidates {
-			keyboard = append(keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(c)))
-		}
-		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
-
-		s.sendMessage(msg)
+		ms.sendMessage(serverMessage{
+			user:    user,
+			text:    "Голосуйте",
+			options: candidates,
+		})
 	}
 }
 
-func (s *server) HandleUnableToVote(e game.UnableToVoteEvent) {
-	s.sendMessage(tgbotapi.NewMessage(e.User, "Вы не можете за него проголосовать"))
+func (ms mafiaServer[T]) HandleUnableToVote(e game.UnableToVoteEvent) {
+	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете за него проголосовать"))
 }
 
-func (s *server) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
-	s.sendMessage(newMessageWithoutKeyboard(e.User, "Вы уже проголосовали"))
+func (ms mafiaServer[T]) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
+	ms.sendMessage(newMessageRemoveKeyboard(e.User, "Вы уже проголосовали"))
 }
 
-func (s *server) HandleVotingEnded(e game.VotingEndedEvent) {
+func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
 	var message string
 
 	for user, voted := range e.UserToVoted {
@@ -133,43 +110,43 @@ func (s *server) HandleVotingEnded(e game.VotingEndedEvent) {
 		message += "Исключили " + e.UserToNick[e.Candidate]
 	}
 
-	s.sendAll(e.Users, message)
+	sendAll(ms, e.Users, message)
 }
 
-func (s *server) HandleNightStarted(e game.NightStartedEvent) {
-	s.sendAll(e.Users, "Город засыпает. Просыпается "+e.FirstToWake)
+func (ms mafiaServer[T]) HandleNightStarted(e game.NightStartedEvent) {
+	sendAll(ms, e.Users, "Город засыпает. Просыпается "+e.FirstToWake)
 }
 
-func (s *server) HandleNightAct(e game.NightActEvent) {
-	var choose string
+func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
+	var text string
 	switch e.Player.Role {
 	case game.Mafia:
-		choose = "Выбирайте жертву"
+		text = "Выбирайте жертву"
 	case game.Peaceful:
-		choose = "Просто нажмите на кнопку"
+		text = "Просто нажмите на кнопку"
 	case game.Doctor:
-		choose = "Выберите, кого лечить"
+		text = "Выберите, кого лечить"
 	case game.Witness:
-		choose = "Выберите, кому вы доверяете - его не смогут ошибочно выгнать"
+		text = "Выберите, кому вы доверяете - его не смогут ошибочно выгнать"
 	case game.Sheriff:
-		choose = "Выберите двух игроков, чтобы проверить, из разных ли они лагерей"
+		text = "Выберите двух игроков, чтобы проверить, из разных ли они лагерей"
 	case game.Maniac:
 		if e.MafiaAlive {
-			choose = "Пока мафия жива, вы не можете никого выбрать"
+			text = "Пока мафия жива, вы не можете никого выбрать"
 		} else {
-			choose = "Выбирайте жертву"
+			text = "Выбирайте жертву"
 		}
 	case game.Guesser:
-		choose = `
+		text = `
 		Вы можете попытаться угадать роль одного из игроков. 
 		Если вы окажетесь верны, он умрет, если его не спасут или не убьют вас. 
 		Если вы угадаете неверно, вы умрете, если вас не спасут
 		`
 	default:
-		choose = "Выбирайте"
+		text = "Выбирайте"
 	}
 
-	msg := tgbotapi.NewMessage(e.Player.User, choose)
+	msg := tgbotapi.NewMessage(e.Player.User, text)
 
 	var keyboard [][]tgbotapi.KeyboardButton
 	for _, v := range e.Victims {
@@ -177,18 +154,22 @@ func (s *server) HandleNightAct(e game.NightActEvent) {
 	}
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
-	s.sendMessage(msg)
+	ms.sendMessage(serverMessage{
+		user:    e.Player.User,
+		text:    text,
+		options: e.Victims,
+	})
 }
 
-func (s *server) HandleUnexpectedActTrial(e game.UnexpectedActTrialEvent) {
-	s.sendMessage(tgbotapi.NewMessage(e.User, "Какого фига, ты спать должен"))
+func (ms mafiaServer[T]) HandleUnexpectedActTrial(e game.UnexpectedActTrialEvent) {
+	ms.sendMessage(newMessageKeepKeyboard(e.User, "Какого фига, ты спать должен"))
 }
 
-func (s *server) HandleUnsupportedAct(e game.UnsupportedActEvent) {
-	s.sendMessage(tgbotapi.NewMessage(e.User, "Вы не можете его выбрать"))
+func (ms mafiaServer[T]) HandleUnsupportedAct(e game.UnsupportedActEvent) {
+	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете его выбрать"))
 }
 
-func (s *server) HandleActEnded(e game.ActEndedEvent) {
+func (ms mafiaServer[T]) HandleActEnded(e game.ActEndedEvent) {
 	var message string
 	if e.Success {
 		if e.Player.Role == game.Sheriff {
@@ -213,10 +194,10 @@ func (s *server) HandleActEnded(e game.ActEndedEvent) {
 	} else {
 		message += "Просыпается " + e.Next
 	}
-	s.sendMessage(newMessageWithoutKeyboard(e.Player.User, message))
+	ms.sendMessage(newMessageRemoveKeyboard(e.Player.User, message))
 }
 
-func (s *server) HandleNightEnded(e game.NightEndedEvent) {
+func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {
 
 	message := hider + "Этой ночью\n"
 	if len(e.Died) == 0 {
@@ -225,26 +206,26 @@ func (s *server) HandleNightEnded(e game.NightEndedEvent) {
 		message += "Убили "
 		for i, died := range e.Died {
 			message += died
-			if i != len(e.Died) - 1 {
+			if i != len(e.Died)-1 {
 				message += ", "
 			}
 		}
 		message += "\n"
 	}
-	s.sendAll(e.Users, message)
+	sendAll(ms, e.Users, message)
 }
 
-func (s *server) HandleWin(e game.WinEvent) {
+func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {
 	message := "Победил " + sideToName[e.Side] + "\n\n"
 
 	for _, nick := range e.Winners {
 		message += nick + "\n"
 	}
 
-	s.sendAll(e.Users, message)
+	sendAll(ms, e.Users, message)
 }
 
 // cleaning references for garbage collection
-func (s *server) HandleNotifyStopGame(e game.NotifyStopGameEvent) {
-	s.sendAll(e.Users, "Игра прервана")
+func (ms mafiaServer[T]) HandleNotifyStopGame(e game.NotifyStopGameEvent) {
+	sendAll(ms, e.Users, "Игра прервана")
 }

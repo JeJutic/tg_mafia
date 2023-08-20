@@ -59,9 +59,9 @@ func (n *night) playerCanAct(member Player) []string {
 		case Guesser:
 			for role := range n.gActive.roleToCnt() {
 				if player.User != member.User && role != Guesser {
-					list = append(list, n.gActive.UserToNick[player.User] + " " + roleToName[role])
+					list = append(list, n.gActive.UserToNick[player.User]+" "+roleToName[role])
 				}
-			} 
+			}
 		}
 	}
 	return list
@@ -147,10 +147,10 @@ func (n *night) next() {
 			Users: n.gActive.GetUsers(),
 		}
 		if n.guessed != 0 && n.guessed != n.healed &&
-				!(n.shot != 0 && n.shot != n.healed && n.gActive.userToPlayer(n.shot).Role == Guesser) {
+			!(n.shot != 0 && n.shot != n.healed && n.gActive.userToPlayer(n.shot).Role == Guesser) {
 			e.Died = append(e.Died, n.gActive.UserToNick[n.guessed])
 			n.gActive.removePlayer(n.guessed)
-		}	//order between guesser and shot is important because of userToPlayer call
+		} //order between guesser and shot is important because of userToPlayer call
 		if n.shot != 0 && n.shot != n.healed && (len(e.Died) == 0 || n.guessed != n.shot) {
 			e.Died = append(e.Died, n.gActive.UserToNick[n.shot])
 			n.gActive.removePlayer(n.shot)
