@@ -109,11 +109,11 @@ func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
 		message += "Исключили " + e.UserToNick[e.Candidate]
 	}
 
-	sendAll(ms, e.Users, message)
+	sendAll(ms, e.Users, message, false)
 }
 
 func (ms mafiaServer[T]) HandleNightStarted(e game.NightStartedEvent) {
-	sendAll(ms, e.Users, "Город засыпает. Просыпается "+e.FirstToWake)
+	sendAll(ms, e.Users, "Город засыпает. Просыпается "+e.FirstToWake, false)
 }
 
 func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
@@ -203,7 +203,7 @@ func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {
 		}
 		message += "\n"
 	}
-	sendAll(ms, e.Users, message)
+	sendAll(ms, e.Users, message, false)
 }
 
 func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {
@@ -213,10 +213,10 @@ func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {
 		message += nick + "\n"
 	}
 
-	sendAll(ms, e.Users, message)
+	sendAll(ms, e.Users, message, true)
 }
 
 // cleaning references for garbage collection
 func (ms mafiaServer[T]) HandleNotifyStopGame(e game.NotifyStopGameEvent) {
-	sendAll(ms, e.Users, "Игра прервана")
+	sendAll(ms, e.Users, "Игра прервана", true)
 }

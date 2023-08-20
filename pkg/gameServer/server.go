@@ -38,7 +38,7 @@ type Server[T any] interface {
 	GetDefaultNick(int64) string
 }
 
-func sendAll[T any](s Server[T], users []int64, text string) {
+func sendAll[T any](s Server[T], users []int64, text string, removeOptions bool) {
 	for _, user := range users {
 		s.SendMessage(newMessageRemoveOptions(user, text))
 	}
