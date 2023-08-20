@@ -16,19 +16,15 @@ type ServerMessage struct {
 	Options []string
 }
 
-func newMessageKeepOptions(user int64, text string) ServerMessage {
-	return ServerMessage{
+func newMessage(user int64, text string, removeOptions bool) ServerMessage {
+	msg := ServerMessage{
 		User: user,
 		Text: text,
 	}
-}
-
-func newMessageRemoveOptions(user int64, text string) ServerMessage {
-	return ServerMessage{
-		User:    user,
-		Text:    text,
-		Options: make([]string, 0),
+	if removeOptions {
+		msg.Options = make([]string, 0)
 	}
+	return msg
 }
 
 type Server[T any] interface {
@@ -40,7 +36,7 @@ type Server[T any] interface {
 
 func sendAll[T any](s Server[T], users []int64, text string, removeOptions bool) {
 	for _, user := range users {
-		s.SendMessage(newMessageRemoveOptions(user, text))
+		s.SendMessage(newMessage(user, text, removeOptions))
 	}
 }
 
