@@ -6,59 +6,53 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	game "github.com/jejutic/tg_mafia/pkg"
 )
 
-type userMessage struct {
-	user    int64
-	text    string
-	command bool
-}
+func run[T any](ms mafiaServer[T]) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
 
-type serverMessage struct {
-	user    int64
-	text    string
-	options []string
-}
+	for update := range ms.getUpdatesChan() {
+		msg := ms.updateToMessage(update)
+		if msg == nil {
+			continue
+		}
 
-func newMessageKeepKeyboard(user int64, text string) serverMessage {
-	return serverMessage{
-		user: user,
-		text: text,
-	}
-}
-
-func newMessageRemoveKeyboard(user int64, text string) serverMessage {
-	return serverMessage{
-		user:    user,
-		text:    text,
-		options: make([]string, 0),
-	}
-}
-
-type server[T any] interface {
-	getUpdatesChan() <-chan T
-	updateToMessage(T) *userMessage // didn't want to make an extra goroutine for casting of updates from chan
-	sendMessage(serverMessage)
-	getDefaultNick(int64) string
-}
-
-type mafiaServer[T any] struct {
-	server[T]
-	userToGame map[int64]*game.Game
-	codeToGame map[int]*game.Game
-}
-
-func newMafiaServer[T any](s server[T]) mafiaServer[T] {
-	return mafiaServer[T]{
-		server:     s,
-		userToGame: make(map[int64]*game.Game),
-		codeToGame: make(map[int]*game.Game),
+		if msg.command {
+			handleCommand(ms, *msg)
+		} else {
+			if game := ms.userToGame[msg.user]; game != nil && game.GActive != nil {
+				game.GActive.Handle(msg.user, msg.text)
+			} else if game == nil {
+				handleCommand(ms, userMessage{
+					user: msg.user,
+					text: "/join " + msg.text,
+				})
+			} else {
+				ms.sendMessage(serverMessage{
+					user: msg.user,
+					text: "Дождитесь начала игры",
+				})
+			}
+		}
 	}
 }
 
 type tgBotServer struct {
 	*tgbotapi.BotAPI
+}
+
+func main() {
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bot.Debug = true
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	s := tgBotServer{bot}
+	run(newMafiaServer[tgbotapi.Update](s))
 }
 
 func (tbs tgBotServer) getUpdatesChan() <-chan tgbotapi.Update {
@@ -109,12 +103,6 @@ func (tbs tgBotServer) sendMessage(msg serverMessage) {
 	}
 }
 
-func sendAll[T any](s server[T], users []int64, text string) {
-	for _, user := range users {
-		s.sendMessage(newMessageRemoveKeyboard(user, text))
-	}
-}
-
 func (tbs tgBotServer) getDefaultNick(user int64) string {
 	chat, err := tbs.GetChat(tgbotapi.ChatInfoConfig{
 		ChatConfig: tgbotapi.ChatConfig{ChatID: user},
@@ -123,47 +111,4 @@ func (tbs tgBotServer) getDefaultNick(user int64) string {
 		return "unspecified"
 	}
 	return chat.UserName
-}
-
-func run[T any](ms mafiaServer[T]) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	for update := range ms.getUpdatesChan() {
-		msg := ms.updateToMessage(update)
-		if msg == nil {
-			continue
-		}
-
-		if msg.command {
-			handleCommand(ms, *msg)
-		} else {
-			if game := ms.userToGame[msg.user]; game != nil && game.GActive != nil {
-				game.GActive.Handle(msg.user, msg.text)
-			} else if game == nil {
-				handleCommand(ms, userMessage{
-					user: msg.user,
-					text: "/join " + msg.text,
-				})
-			} else {
-				ms.sendMessage(serverMessage{
-					user: msg.user,
-					text: "Дождитесь начала игры",
-				})
-			}
-		}
-	}
-}
-
-func main() {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
-	if err != nil {
-		log.Panic(err)
-	}
-
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	s := tgBotServer{bot}
-	run(newMafiaServer[tgbotapi.Update](s))
 }
