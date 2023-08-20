@@ -1,11 +1,14 @@
 package game_test
 
 import (
+	// "os"
+	// "runtime"
 	"strings"
 	"testing"
+	"time"
 
-	. "github.com/jejutic/tg_mafia/mocks/github.com/jejutic/tg_mafia/pkg"
-	. "github.com/jejutic/tg_mafia/pkg"
+	. "github.com/jejutic/tg_mafia/mocks/github.com/jejutic/tg_mafia/pkg/game"
+	. "github.com/jejutic/tg_mafia/pkg/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -28,6 +31,17 @@ func rolesFromPlayers(players []Player) []Role {
 		roles = append(roles, player.Role)
 	}
 	return roles
+}
+
+// func TestMain(m *testing.M) {
+// 	runtime.GOMAXPROCS(1)
+// 	code := m.Run()
+// 	os.Exit(code)
+// }
+
+func handle(g *Game, user int64, request string) {
+	g.GActive.Handle(user, request)
+	time.Sleep(2 * time.Millisecond)
 }
 
 func Test_scenario1(t *testing.T) {
@@ -73,17 +87,17 @@ func Test_scenario1(t *testing.T) {
 	mockEOutput.EXPECT().HandleUnableToVote(UnableToVoteEvent{
 		User: 1,
 	}).Once()
-	g.GActive.Handle(1, "a")
+	handle(g, 1, "a")
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
 	mockEOutput.EXPECT().HandleAlreadyVoted(AlreadyVotedEvent{
 		User: 3,
 	})
-	g.GActive.Handle(3, "a")
-	g.GActive.Handle(4, "a")
-	g.GActive.Handle(5, "b")
+	handle(g, 3, "a")
+	handle(g, 4, "a")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -134,19 +148,19 @@ func Test_scenario1(t *testing.T) {
 
 			if *acted == false { // UnexpectedActTrialEvent
 				if e.Player.User == 1 {
-					g.GActive.Handle(2, "c")
+					handle(g, 2, "c")
 				} else {
-					g.GActive.Handle(1, "c")
+					handle(g, 1, "c")
 				}
 				*acted = true
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(6)
 	mockEOutput.EXPECT().HandleUnexpectedActTrial(mock.Anything).Once()
 	mockEOutput.EXPECT().HandleUnsupportedAct(UnsupportedActEvent{
 		User: 4,
 	}).Run(func(e UnsupportedActEvent) {
-		g.GActive.Handle(4, "e")
+		handle(g, 4, "e")
 	}).Once()
 
 	unsuccessfulShot := pbool(false)
@@ -173,15 +187,17 @@ func Test_scenario1(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
+
+	time.Sleep(100 * time.Millisecond)
 
 	assert.Equal(true, *unsuccessfulShot, "shot expected to be unsuccessful")
 
-	g.GActive.Handle(1, "skip")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "a")
-	g.GActive.Handle(4, "a")
-	g.GActive.Handle(5, "a")
+	handle(g, 1, "skip")
+	handle(g, 2, "a")
+	handle(g, 3, "a")
+	handle(g, 4, "a")
+	handle(g, 5, "a")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -213,7 +229,7 @@ func Test_scenario1(t *testing.T) {
 				victim = e.Victims[0]
 			}
 			assert.Equal(victimCnt, len(e.Victims), "unexpected number of victims (buttons)")
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(6)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -231,12 +247,14 @@ func Test_scenario1(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "b")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(4, "b")
-	g.GActive.Handle(5, "b")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "b")
+	handle(g, 2, "a")
+	handle(g, 4, "b")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -257,7 +275,7 @@ func Test_scenario1(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(5)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -275,12 +293,14 @@ func Test_scenario1(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "b")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(4, "b")
-	g.GActive.Handle(5, "b")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "b")
+	handle(g, 2, "a")
+	handle(g, 4, "b")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -301,7 +321,7 @@ func Test_scenario1(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(4)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -318,10 +338,12 @@ func Test_scenario1(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "skip")
-	g.GActive.Handle(4, "skip")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "skip")
+	handle(g, 4, "skip")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -342,7 +364,7 @@ func Test_scenario1(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(3)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -359,10 +381,10 @@ func Test_scenario1(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(5, "skip")
+	handle(g, 5, "skip")
 
-	g.GActive.Handle(1, "skip")
-	g.GActive.Handle(4, "a")
+	handle(g, 1, "skip")
+	handle(g, 4, "a")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -376,7 +398,9 @@ func Test_scenario1(t *testing.T) {
 		}).Once()
 
 	assert.Equal(false, *closed, "game should not have been closed yet")
-	g.GActive.Handle(5, "a")
+	handle(g, 5, "a")
+
+	time.Sleep(100 * time.Millisecond)
 
 	// mockEOutput.EXPECT().HandleNotifyStopGame(mock.Anything).Once()
 	// g.StopGame(true)
@@ -428,11 +452,11 @@ func Test_scenario2(t *testing.T) {
 		}).Once()
 	g.Start(players)
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "a")
-	g.GActive.Handle(5, "b")
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
+	handle(g, 4, "a")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -463,7 +487,7 @@ func Test_scenario2(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(6)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -480,13 +504,15 @@ func Test_scenario2(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "a")
-	g.GActive.Handle(5, "b")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
+	handle(g, 4, "a")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -511,7 +537,7 @@ func Test_scenario2(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(6)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -528,12 +554,14 @@ func Test_scenario2(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "a")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
+	handle(g, 4, "a")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -556,7 +584,7 @@ func Test_scenario2(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(5)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -577,12 +605,14 @@ func Test_scenario2(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "a")
-	g.GActive.Handle(4, "a")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "a")
+	handle(g, 4, "a")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -606,7 +636,7 @@ func Test_scenario2(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(4)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -627,11 +657,13 @@ func Test_scenario2(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(2, "d")
-	g.GActive.Handle(3, "b")
-	g.GActive.Handle(4, "b")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 2, "d")
+	handle(g, 3, "b")
+	handle(g, 4, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -651,7 +683,7 @@ func Test_scenario2(t *testing.T) {
 				assert.Equal(2, len(e.Victims), "unexpected number of maniac potential victims")
 				victim = "f"
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(3)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -672,10 +704,12 @@ func Test_scenario2(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "b")
+	handle(g, 6, "b")
 
-	g.GActive.Handle(3, "d")
-	g.GActive.Handle(4, "c")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 3, "d")
+	handle(g, 4, "c")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -687,7 +721,9 @@ func Test_scenario2(t *testing.T) {
 			assert.Equal(1, len(e.Winners), "unexpected game winners count")
 		}).Once()
 
-	g.GActive.Handle(6, "d")
+	handle(g, 6, "d")
+
+	time.Sleep(100 * time.Millisecond)
 }
 
 func Test_scenario3(t *testing.T) {
@@ -725,11 +761,11 @@ func Test_scenario3(t *testing.T) {
 		}).Once()
 	g.Start(players)
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "a")
-	g.GActive.Handle(5, "b")
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
+	handle(g, 4, "a")
+	handle(g, 5, "b")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -757,7 +793,7 @@ func Test_scenario3(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(6)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -778,12 +814,14 @@ func Test_scenario3(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(1, "c")
-	g.GActive.Handle(2, "a")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "a")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 1, "c")
+	handle(g, 2, "a")
+	handle(g, 3, "skip")
+	handle(g, 4, "a")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -806,7 +844,7 @@ func Test_scenario3(t *testing.T) {
 			default:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(5)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -827,11 +865,13 @@ func Test_scenario3(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(2, "c")
-	g.GActive.Handle(3, "skip")
-	g.GActive.Handle(4, "skip")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 2, "c")
+	handle(g, 3, "skip")
+	handle(g, 4, "skip")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -851,7 +891,7 @@ func Test_scenario3(t *testing.T) {
 			case Guesser:
 				victim = e.Victims[0]
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(4)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -872,10 +912,12 @@ func Test_scenario3(t *testing.T) {
 			}
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
 
-	g.GActive.Handle(2, "c")
-	g.GActive.Handle(3, "skip")
+	time.Sleep(100 * time.Millisecond)
+
+	handle(g, 2, "c")
+	handle(g, 3, "skip")
 
 	mockEOutput.EXPECT().HandleVotingEnded(mock.Anything).
 		Run(func(e VotingEndedEvent) {
@@ -894,7 +936,7 @@ func Test_scenario3(t *testing.T) {
 				assert.Equal(11, len(e.Victims), "expected another cnt of guesser's options")
 				victim = "b маньяк"
 			}
-			g.GActive.Handle(e.Player.User, victim)
+			handle(g, e.Player.User, victim)
 		}).Times(3)
 	mockEOutput.EXPECT().HandleActEnded(mock.Anything).
 		Run(func(e ActEndedEvent) {
@@ -915,5 +957,7 @@ func Test_scenario3(t *testing.T) {
 			assert.Equal(1, len(e.Winners), "unexpected game winners count")
 		}).Once()
 
-	g.GActive.Handle(6, "skip")
+	handle(g, 6, "skip")
+
+	time.Sleep(100 * time.Millisecond)
 }
