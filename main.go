@@ -8,36 +8,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func run[T any](ms mafiaServer[T]) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	for update := range ms.getUpdatesChan() {
-		msg := ms.updateToMessage(update)
-		if msg == nil {
-			continue
-		}
-
-		if msg.command {
-			handleCommand(ms, *msg)
-		} else {
-			if game := ms.userToGame[msg.user]; game != nil && game.Started() {
-				game.GActive.Handle(msg.user, msg.text)
-			} else if game == nil {
-				handleCommand(ms, userMessage{
-					user: msg.user,
-					text: "/join " + msg.text,
-				})
-			} else {
-				ms.sendMessage(serverMessage{
-					user: msg.user,
-					text: "Дождитесь начала игры",
-				})
-			}
-		}
-	}
-}
-
 type tgBotServer struct {
 	*tgbotapi.BotAPI
 }

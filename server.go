@@ -57,3 +57,31 @@ func newMafiaServer[T any](s server[T]) mafiaServer[T] {
 		codeToGame: make(map[int]*game.Game),
 	}
 }
+
+func run[T any](ms mafiaServer[T]) {
+
+	for update := range ms.getUpdatesChan() {
+		msg := ms.updateToMessage(update)
+		if msg == nil {
+			continue
+		}
+
+		if msg.command {
+			handleCommand(ms, *msg)
+		} else {
+			if game := ms.userToGame[msg.user]; game != nil && game.Started() {
+				game.GActive.Handle(msg.user, msg.text)
+			} else if game == nil {
+				handleCommand(ms, userMessage{
+					user: msg.user,
+					text: "/join " + msg.text,
+				})
+			} else {
+				ms.sendMessage(serverMessage{
+					user: msg.user,
+					text: "Дождитесь начала игры",
+				})
+			}
+		}
+	}
+}

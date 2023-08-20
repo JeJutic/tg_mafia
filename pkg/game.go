@@ -7,7 +7,7 @@ import (
 
 // Game represents a mafia game either started or not
 type Game struct {
-	EOutput    EventOutput      // output of events happening during active game
+	eOutput    EventOutput      // output of events happening during active game
 	creator    int64            // user which created the game
 	NickToUser map[string]int64 // mapping from nick in the game to user
 	UserToNick map[int64]string // mapping from user to nick in the game
@@ -58,11 +58,11 @@ func (g *Game) Start(pQueue []Player) error {
 	}
 
 	g.initGameActive(pQueue)
-	g.EOutput.HandleFirstDay(FirstDayEvent{
+	g.eOutput.HandleFirstDay(FirstDayEvent{
 		g.UserToNick,
 		g.GActive.pQueue,
 	})
-	g.GActive.startDay()
+	go g.GActive.startDay()
 	return nil
 }
 
@@ -102,7 +102,7 @@ func (g *Game) StopGame(notify bool) {
 	g.close(g)
 
 	if notify {
-		g.EOutput.HandleNotifyStopGame(NotifyStopGameEvent{
+		g.eOutput.HandleNotifyStopGame(NotifyStopGameEvent{
 			g.GetUsers(),
 		})
 	}
