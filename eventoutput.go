@@ -81,11 +81,11 @@ func (ms mafiaServer[T]) HandleVotingStarted(e game.VotingStartedEvent) {
 }
 
 func (ms mafiaServer[T]) HandleUnableToVote(e game.UnableToVoteEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете за него проголосовать"))
+	ms.sendMessage(newMessageKeepOptions(e.User, "Вы не можете за него проголосовать"))
 }
 
 func (ms mafiaServer[T]) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
-	ms.sendMessage(newMessageRemoveKeyboard(e.User, "Вы уже проголосовали"))
+	ms.sendMessage(newMessageRemoveOptions(e.User, "Вы уже проголосовали"))
 }
 
 func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
@@ -162,11 +162,11 @@ func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
 }
 
 func (ms mafiaServer[T]) HandleUnexpectedActTrial(e game.UnexpectedActTrialEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Какого фига, ты спать должен"))
+	ms.sendMessage(newMessageKeepOptions(e.User, "Какого фига, ты спать должен"))
 }
 
 func (ms mafiaServer[T]) HandleUnsupportedAct(e game.UnsupportedActEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете его выбрать"))
+	ms.sendMessage(newMessageKeepOptions(e.User, "Вы не можете его выбрать"))
 }
 
 func (ms mafiaServer[T]) HandleActEnded(e game.ActEndedEvent) {
@@ -194,7 +194,7 @@ func (ms mafiaServer[T]) HandleActEnded(e game.ActEndedEvent) {
 	} else {
 		message += "Просыпается " + e.Next
 	}
-	ms.sendMessage(newMessageRemoveKeyboard(e.Player.User, message))
+	ms.sendMessage(newMessageRemoveOptions(e.Player.User, message))
 }
 
 func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {

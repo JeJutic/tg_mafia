@@ -12,8 +12,8 @@ type night struct {
 	witnessed int64
 }
 
-// newNight sets night field in gActive ga
-func (ga *gameActive) newNight() {
+// initNight sets night field in gActive ga
+func (ga *gameActive) initNight() {
 	ga.night = &night{
 		gActive: ga,
 		offset:  -1,

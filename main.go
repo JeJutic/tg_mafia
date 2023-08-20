@@ -21,7 +21,7 @@ func run[T any](ms mafiaServer[T]) {
 		if msg.command {
 			handleCommand(ms, *msg)
 		} else {
-			if game := ms.userToGame[msg.user]; game != nil && game.GActive != nil {
+			if game := ms.userToGame[msg.user]; game != nil && game.Started() {
 				game.GActive.Handle(msg.user, msg.text)
 			} else if game == nil {
 				handleCommand(ms, userMessage{

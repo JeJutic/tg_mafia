@@ -77,38 +77,38 @@ func handleCommand[T any](ms mafiaServer[T], msg userMessage) {
 
 	case "join":
 		if len(words) < 2 {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "В команде не представлен Ваш код"))
+			ms.sendMessage(newMessageKeepOptions(msg.user, "В команде не представлен Ваш код"))
 			return
 		}
 		code, err := strconv.Atoi(words[1])
 		if err != nil {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "У кода невалидный формат"))
+			ms.sendMessage(newMessageKeepOptions(msg.user, "У кода невалидный формат"))
 			return
 		}
 		if ms.userToGame[msg.user] != nil {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Вы уже в игре"))
+			ms.sendMessage(newMessageKeepOptions(msg.user, "Вы уже в игре"))
 			return
 		}
 		if game := ms.codeToGame[code]; game != nil {
-			if game.GActive == nil {
+			if !game.Started() {
 
 				var nick string
 				switch {
 				case len(words) < 3:
 					nick = ms.getDefaultNick(msg.user)
 				case len(words) > 3:
-					ms.sendMessage(newMessageKeepKeyboard(msg.user, "Ник может состоять только из одного слова"))
+					ms.sendMessage(newMessageKeepOptions(msg.user, "Ник может состоять только из одного слова"))
 					return
 				default:
 					nick = words[2]
 				}
 				if !validNick(nick) {
-					ms.sendMessage(newMessageKeepKeyboard(msg.user, "Ник не валиден"))
+					ms.sendMessage(newMessageKeepOptions(msg.user, "Ник не валиден"))
 					return
 				}
 
 				if err := game.AddMember(msg.user, nick); err != nil {
-					ms.sendMessage(newMessageKeepKeyboard(msg.user,
+					ms.sendMessage(newMessageKeepOptions(msg.user,
 						"Кажется, в игре уже есть человек с таким ником: "+err.Error(),
 					))
 					return
@@ -119,23 +119,23 @@ func handleCommand[T any](ms mafiaServer[T], msg userMessage) {
 				for nick := range game.NickToUser {
 					message += nick + "\n"
 				}
-				ms.sendMessage(newMessageKeepKeyboard(msg.user, message))
+				ms.sendMessage(newMessageKeepOptions(msg.user, message))
 				game.Start(game.RandomPlayerQueue()) // tries to start, ignores the error
 			} else {
-				ms.sendMessage(newMessageKeepKeyboard(msg.user, "Игра уже началась"))
+				ms.sendMessage(newMessageKeepOptions(msg.user, "Игра уже началась"))
 			}
 		} else {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Код не валиден"))
+			ms.sendMessage(newMessageKeepOptions(msg.user, "Код не валиден"))
 		}
 
 	case "stop":
 		if game := ms.userToGame[msg.user]; game != nil {
 			game.StopGame(true)
 		} else {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Вы не в игре"))
+			ms.sendMessage(newMessageKeepOptions(msg.user, "Вы не в игре"))
 		}
 
 	default:
-		ms.sendMessage(newMessageKeepKeyboard(msg.user, "Неизвестная команда: "+words[0]))
+		ms.sendMessage(newMessageKeepOptions(msg.user, "Неизвестная команда: "+words[0]))
 	}
 }

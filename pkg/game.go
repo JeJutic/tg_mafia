@@ -30,6 +30,11 @@ func NewGame(eOutput EventOutput, code int, creator int64, roles []Role, close f
 	}
 }
 
+// Started iff Game g has started
+func (g *Game) Started() bool {
+	return g.GActive != nil
+}
+
 // AddMember adds a player in Game g with user id as user and nick as game nickname
 // if nick isn't already presented in the game. Returns non-nil error otherwise
 func (g *Game) AddMember(user int64, nick string) error {
@@ -52,7 +57,7 @@ func (g *Game) Start(pQueue []Player) error {
 		return errors.New("not enough players in queue")
 	}
 
-	g.newGameActive(pQueue)
+	g.initGameActive(pQueue)
 	g.EOutput.HandleFirstDay(FirstDayEvent{
 		g.UserToNick,
 		g.GActive.pQueue,

@@ -15,13 +15,13 @@ type gameActive struct {
 	night     *night
 }
 
-// newGameActive sets gActive field in Game g with pQueue parameter set
-func (g *Game) newGameActive(pQueue []Player) {
+// initGameActive sets gActive field in Game g with pQueue parameter set
+func (g *Game) initGameActive(pQueue []Player) {
 	g.GActive = &gameActive{
 		Game:   g,
 		pQueue: pQueue,
 	}
-	g.GActive.newVoting(true)
+	g.GActive.initVoting(true)
 }
 
 func (ga *gameActive) roleToCnt() map[Role]int {
@@ -124,7 +124,7 @@ func (ga *gameActive) removePlayer(user int64) {
 func (ga *gameActive) startDay() {
 	ga.night = nil
 	if ga.voting == nil {
-		ga.newVoting(false)
+		ga.initVoting(false)
 	}
 
 	if ga.checkForEnd() {
@@ -142,7 +142,7 @@ func (ga *gameActive) startDay() {
 
 func (ga *gameActive) startNight() {
 	ga.voting = nil
-	ga.newNight()
+	ga.initNight()
 
 	if ga.checkForEnd() {
 		return

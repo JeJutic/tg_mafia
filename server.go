@@ -16,14 +16,14 @@ type serverMessage struct {
 	options []string
 }
 
-func newMessageKeepKeyboard(user int64, text string) serverMessage {
+func newMessageKeepOptions(user int64, text string) serverMessage {
 	return serverMessage{
 		user: user,
 		text: text,
 	}
 }
 
-func newMessageRemoveKeyboard(user int64, text string) serverMessage {
+func newMessageRemoveOptions(user int64, text string) serverMessage {
 	return serverMessage{
 		user:    user,
 		text:    text,
@@ -40,7 +40,7 @@ type server[T any] interface {
 
 func sendAll[T any](s server[T], users []int64, text string) {
 	for _, user := range users {
-		s.sendMessage(newMessageRemoveKeyboard(user, text))
+		s.sendMessage(newMessageRemoveOptions(user, text))
 	}
 }
 
