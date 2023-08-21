@@ -1,4 +1,4 @@
-package main
+package gameServer
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	game "github.com/jejutic/tg_mafia/pkg"
+	game "github.com/jejutic/tg_mafia/pkg/game"
 )
 
 func validNick(nick string) bool {
@@ -40,9 +40,9 @@ func parseRoles(tokens []string) ([]game.Role, error) {
 	return roles, game.ValidRoles(roles)
 }
 
-func handleCommand[T any](ms mafiaServer[T], msg userMessage) {
+func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
 
-	switch words := strings.Split(msg.text, " "); words[0][1:] {
+	switch words := strings.Split(msg.Text, " "); words[0][1:] {
 	case "create":
 		var code int
 		for {
@@ -54,9 +54,9 @@ func handleCommand[T any](ms mafiaServer[T], msg userMessage) {
 
 		roles, err := parseRoles(words[1:])
 		if err != nil {
-			ms.sendMessage(serverMessage{
-				user: msg.user,
-				text: "Не получилось распарсить роли: " + err.Error(),
+			ms.SendMessage(ServerMessage{
+				User: msg.User,
+				Text: "Не получилось распарсить роли: " + err.Error(),
 			})
 			return
 		}
@@ -67,75 +67,76 @@ func handleCommand[T any](ms mafiaServer[T], msg userMessage) {
 				ms.userToGame[user] = nil
 			}
 		}
-		game := game.NewGame(ms, code, msg.user, roles, close)
+		game := game.NewGame(ms, code, msg.User, roles, close)
 		ms.codeToGame[code] = game
 
-		ms.sendMessage(serverMessage{
-			user: msg.user,
-			text: "Игра успешно создана. Чтобы присоединиться введите\n/join " + strconv.Itoa(code) + " /никнейм/",
+		ms.SendMessage(ServerMessage{
+			User: msg.User,
+			Text: "Игра успешно создана. Чтобы присоединиться введите\n/join " + strconv.Itoa(code) + " /никнейм/",
 		})
 
 	case "join":
 		if len(words) < 2 {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "В команде не представлен Ваш код"))
+			ms.SendMessage(newMessage(msg.User, "В команде не представлен Ваш код", false))
 			return
 		}
 		code, err := strconv.Atoi(words[1])
 		if err != nil {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "У кода невалидный формат"))
+			ms.SendMessage(newMessage(msg.User, "У кода невалидный формат", false))
 			return
 		}
-		if ms.userToGame[msg.user] != nil {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Вы уже в игре"))
+		if ms.userToGame[msg.User] != nil {
+			ms.SendMessage(newMessage(msg.User, "Вы уже в игре", false))
 			return
 		}
 		if game := ms.codeToGame[code]; game != nil {
-			if game.GActive == nil {
+			if !game.Started() {
 
 				var nick string
 				switch {
 				case len(words) < 3:
-					nick = ms.getDefaultNick(msg.user)
+					nick = ms.GetDefaultNick(msg.User)
 				case len(words) > 3:
-					ms.sendMessage(newMessageKeepKeyboard(msg.user, "Ник может состоять только из одного слова"))
+					ms.SendMessage(newMessage(msg.User, "Ник может состоять только из одного слова", false))
 					return
 				default:
 					nick = words[2]
 				}
 				if !validNick(nick) {
-					ms.sendMessage(newMessageKeepKeyboard(msg.user, "Ник не валиден"))
+					ms.SendMessage(newMessage(msg.User, "Ник не валиден", false))
 					return
 				}
 
-				if err := game.AddMember(msg.user, nick); err != nil {
-					ms.sendMessage(newMessageKeepKeyboard(msg.user,
+				if err := game.AddMember(msg.User, nick); err != nil {
+					ms.SendMessage(newMessage(msg.User,
 						"Кажется, в игре уже есть человек с таким ником: "+err.Error(),
+						false,
 					))
 					return
 				}
 
-				ms.userToGame[msg.user] = game
+				ms.userToGame[msg.User] = game
 				message := "Вы успешно присоединились. Роли: " + rolesToString(game.Roles) + "\n\n"
 				for nick := range game.NickToUser {
 					message += nick + "\n"
 				}
-				ms.sendMessage(newMessageKeepKeyboard(msg.user, message))
+				ms.SendMessage(newMessage(msg.User, message, false))
 				game.Start(game.RandomPlayerQueue()) // tries to start, ignores the error
 			} else {
-				ms.sendMessage(newMessageKeepKeyboard(msg.user, "Игра уже началась"))
+				ms.SendMessage(newMessage(msg.User, "Игра уже началась", false))
 			}
 		} else {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Код не валиден"))
+			ms.SendMessage(newMessage(msg.User, "Код не валиден", false))
 		}
 
 	case "stop":
-		if game := ms.userToGame[msg.user]; game != nil {
+		if game := ms.userToGame[msg.User]; game != nil {
 			game.StopGame(true)
 		} else {
-			ms.sendMessage(newMessageKeepKeyboard(msg.user, "Вы не в игре"))
+			ms.SendMessage(newMessage(msg.User, "Вы не в игре", false))
 		}
 
 	default:
-		ms.sendMessage(newMessageKeepKeyboard(msg.user, "Неизвестная команда: "+words[0]))
+		ms.SendMessage(newMessage(msg.User, "Неизвестная команда: "+words[0], false))
 	}
 }

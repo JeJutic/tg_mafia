@@ -10,7 +10,7 @@ type voting struct {
 	userToVoted map[int64]int64
 }
 
-func (ga *gameActive) newVoting(firstVoting bool) {
+func (ga *gameActive) initVoting(firstVoting bool) {
 	ga.voting = &voting{
 		ga,
 		firstVoting,
@@ -51,12 +51,12 @@ func (v *voting) handleVote(user int64, vote string) {
 				v.gActive.votingConclusion()
 			}
 		} else {
-			v.gActive.EOutput.HandleUnableToVote(UnableToVoteEvent{
+			v.gActive.eOutput.HandleUnableToVote(UnableToVoteEvent{
 				user,
 			})
 		}
 	} else {
-		v.gActive.EOutput.HandleAlreadyVoted(AlreadyVotedEvent{
+		v.gActive.eOutput.HandleAlreadyVoted(AlreadyVotedEvent{
 			user,
 		})
 	}

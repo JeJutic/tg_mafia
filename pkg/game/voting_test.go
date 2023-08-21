@@ -9,7 +9,7 @@ import (
 
 func Test_newVoting(t *testing.T) {
 	ga := &gameActive{}
-	ga.newVoting(false)
+	ga.initVoting(false)
 
 	if ga.voting.userToVoted == nil {
 		t.Error("Voting map field isn't initialized properly")

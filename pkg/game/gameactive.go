@@ -3,11 +3,13 @@ package game
 import (
 	"log"
 	"runtime/debug"
+	"sync"
 )
 
 // gameActive represents a started mafia game
 type gameActive struct {
 	*Game
+	mu        sync.Mutex
 	pQueue    []Player //will be deleted from slice if dead
 	witnessed int64
 	healed    int64
@@ -15,13 +17,13 @@ type gameActive struct {
 	night     *night
 }
 
-// newGameActive sets gActive field in Game g with pQueue parameter set
-func (g *Game) newGameActive(pQueue []Player) {
+// initGameActive sets gActive field in Game g with pQueue parameter set
+func (g *Game) initGameActive(pQueue []Player) {
 	g.GActive = &gameActive{
 		Game:   g,
 		pQueue: pQueue,
 	}
-	g.GActive.newVoting(true)
+	g.GActive.initVoting(true)
 }
 
 func (ga *gameActive) roleToCnt() map[Role]int {
@@ -85,7 +87,7 @@ func (ga *gameActive) checkForEnd() bool {
 				e.Winners = append(e.Winners, ga.UserToNick[player.User])
 			}
 		}
-		ga.EOutput.HandleWin(e)
+		ga.eOutput.HandleWin(e)
 		ga.StopGame(false)
 
 		return true
@@ -124,7 +126,7 @@ func (ga *gameActive) removePlayer(user int64) {
 func (ga *gameActive) startDay() {
 	ga.night = nil
 	if ga.voting == nil {
-		ga.newVoting(false)
+		ga.initVoting(false)
 	}
 
 	if ga.checkForEnd() {
@@ -137,18 +139,18 @@ func (ga *gameActive) startDay() {
 	for _, player := range ga.pQueue {
 		e.UserToCandidates[player.User] = ga.voting.userCanVote(player.User)
 	}
-	ga.EOutput.HandleVotingStarted(e)
+	ga.eOutput.HandleVotingStarted(e)
 }
 
 func (ga *gameActive) startNight() {
 	ga.voting = nil
-	ga.newNight()
+	ga.initNight()
 
 	if ga.checkForEnd() {
 		return
 	}
 
-	ga.EOutput.HandleNightStarted(NightStartedEvent{
+	ga.eOutput.HandleNightStarted(NightStartedEvent{
 		ga.GetUsers(),
 		ga.UserToNick[ga.pQueue[0].User],
 	})
@@ -171,7 +173,7 @@ func (ga *gameActive) votingConclusion() {
 		ga.removePlayer(candidate)
 	}
 
-	ga.EOutput.HandleVotingEnded(e)
+	ga.eOutput.HandleVotingEnded(e)
 	ga.startNight()
 }
 
@@ -185,6 +187,9 @@ func contains(elems []string, target string) bool {
 }
 
 func (ga *gameActive) Handle(user int64, request string) {
+	ga.mu.Lock()
+	defer ga.mu.Unlock()
+
 	if ga.voting != nil {
 		ga.voting.handleVote(user, request)
 	} else { //night

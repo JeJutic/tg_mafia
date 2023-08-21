@@ -6,37 +6,8 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	gameServer "github.com/jejutic/tg_mafia/pkg/gameServer"
 )
-
-func run[T any](ms mafiaServer[T]) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	for update := range ms.getUpdatesChan() {
-		msg := ms.updateToMessage(update)
-		if msg == nil {
-			continue
-		}
-
-		if msg.command {
-			handleCommand(ms, *msg)
-		} else {
-			if game := ms.userToGame[msg.user]; game != nil && game.GActive != nil {
-				game.GActive.Handle(msg.user, msg.text)
-			} else if game == nil {
-				handleCommand(ms, userMessage{
-					user: msg.user,
-					text: "/join " + msg.text,
-				})
-			} else {
-				ms.sendMessage(serverMessage{
-					user: msg.user,
-					text: "Дождитесь начала игры",
-				})
-			}
-		}
-	}
-}
 
 type tgBotServer struct {
 	*tgbotapi.BotAPI
@@ -52,17 +23,17 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	s := tgBotServer{bot}
-	run(newMafiaServer[tgbotapi.Update](s))
+	gameServer.Run[tgbotapi.Update](gameServer.NewMafiaServer[tgbotapi.Update](s))
 }
 
-func (tbs tgBotServer) getUpdatesChan() <-chan tgbotapi.Update {
+func (tbs tgBotServer) GetUpdatesChan() <-chan tgbotapi.Update {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	return tbs.BotAPI.GetUpdatesChan(u)
 }
 
-func (tbs tgBotServer) updateToMessage(update tgbotapi.Update) *userMessage {
+func (tbs tgBotServer) UpdateToMessage(update tgbotapi.Update) *gameServer.UserMessage {
 	if update.Message == nil { // ignore non-Message updates
 		return nil
 	}
@@ -72,22 +43,22 @@ func (tbs tgBotServer) updateToMessage(update tgbotapi.Update) *userMessage {
 	runeText := utf16.Decode(utfEncodedText)
 	text = string(runeText)
 
-	return &userMessage{
-		user:    update.Message.Chat.ID,
-		text:    text,
-		command: update.Message.IsCommand(),
+	return &gameServer.UserMessage{
+		User:    update.Message.Chat.ID,
+		Text:    text,
+		Command: update.Message.IsCommand(),
 	}
 }
 
-func (tbs tgBotServer) sendMessage(msg serverMessage) {
-	msgConfig := tgbotapi.NewMessage(msg.user, msg.text)
+func (tbs tgBotServer) SendMessage(msg gameServer.ServerMessage) {
+	msgConfig := tgbotapi.NewMessage(msg.User, msg.Text)
 
-	if msg.options != nil {
-		if len(msg.options) == 0 {
+	if msg.Options != nil {
+		if len(msg.Options) == 0 {
 			msgConfig.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		} else {
 			var keyboard [][]tgbotapi.KeyboardButton
-			for _, c := range msg.options {
+			for _, c := range msg.Options {
 				keyboard = append(keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(c)))
 			}
 			msgConfig.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
@@ -103,7 +74,7 @@ func (tbs tgBotServer) sendMessage(msg serverMessage) {
 	}
 }
 
-func (tbs tgBotServer) getDefaultNick(user int64) string {
+func (tbs tgBotServer) GetDefaultNick(user int64) string {
 	chat, err := tbs.GetChat(tgbotapi.ChatInfoConfig{
 		ChatConfig: tgbotapi.ChatConfig{ChatID: user},
 	})

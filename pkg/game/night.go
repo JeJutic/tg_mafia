@@ -12,8 +12,8 @@ type night struct {
 	witnessed int64
 }
 
-// newNight sets night field in gActive ga
-func (ga *gameActive) newNight() {
+// initNight sets night field in gActive ga
+func (ga *gameActive) initNight() {
 	ga.night = &night{
 		gActive: ga,
 		offset:  -1,
@@ -118,15 +118,15 @@ func (n *night) handleAct(user int64, victim string) {
 			if n.offset+1 < len(n.gActive.pQueue) {
 				e.Next = n.gActive.UserToNick[n.gActive.pQueue[n.offset+1].User]
 			}
-			n.gActive.EOutput.HandleActEnded(e)
+			n.gActive.eOutput.HandleActEnded(e)
 			n.next()
 		} else {
-			n.gActive.EOutput.HandleUnsupportedAct(UnsupportedActEvent{
+			n.gActive.eOutput.HandleUnsupportedAct(UnsupportedActEvent{
 				user,
 			})
 		}
 	} else {
-		n.gActive.EOutput.HandleUnexpectedActTrial(UnexpectedActTrialEvent{
+		n.gActive.eOutput.HandleUnexpectedActTrial(UnexpectedActTrialEvent{
 			user,
 		})
 	}
@@ -137,7 +137,7 @@ func (n *night) next() {
 	if n.offset < len(n.gActive.pQueue) {
 		player := n.gActive.pQueue[n.offset]
 
-		n.gActive.EOutput.HandleNightAct(NightActEvent{
+		n.gActive.eOutput.HandleNightAct(NightActEvent{
 			player,
 			n.playerCanAct(player),
 			n.gActive.mafiaAlive(),
@@ -158,7 +158,7 @@ func (n *night) next() {
 		n.gActive.healed = n.healed
 		n.gActive.witnessed = n.witnessed
 
-		n.gActive.EOutput.HandleNightEnded(e)
+		n.gActive.eOutput.HandleNightEnded(e)
 		n.gActive.startDay()
 	}
 }

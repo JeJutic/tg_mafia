@@ -1,10 +1,9 @@
-package main
+package gameServer
 
 import (
 	"log"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	game "github.com/jejutic/tg_mafia/pkg"
+	game "github.com/jejutic/tg_mafia/pkg/game"
 )
 
 const (
@@ -63,29 +62,29 @@ func (ms mafiaServer[T]) HandleFirstDay(e game.FirstDayEvent) {
 		}
 
 		text += hider
-		ms.sendMessage(serverMessage{
-			user: player.User,
-			text: text,
+		ms.SendMessage(ServerMessage{
+			User: player.User,
+			Text: text,
 		})
 	}
 }
 
 func (ms mafiaServer[T]) HandleVotingStarted(e game.VotingStartedEvent) {
 	for user, candidates := range e.UserToCandidates {
-		ms.sendMessage(serverMessage{
-			user:    user,
-			text:    "Голосуйте",
-			options: candidates,
+		ms.SendMessage(ServerMessage{
+			User:    user,
+			Text:    "Голосуйте",
+			Options: candidates,
 		})
 	}
 }
 
 func (ms mafiaServer[T]) HandleUnableToVote(e game.UnableToVoteEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете за него проголосовать"))
+	ms.SendMessage(newMessage(e.User, "Вы не можете за него проголосовать", false))
 }
 
 func (ms mafiaServer[T]) HandleAlreadyVoted(e game.AlreadyVotedEvent) {
-	ms.sendMessage(newMessageRemoveKeyboard(e.User, "Вы уже проголосовали"))
+	ms.SendMessage(newMessage(e.User, "Вы уже проголосовали", true))
 }
 
 func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
@@ -110,11 +109,11 @@ func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
 		message += "Исключили " + e.UserToNick[e.Candidate]
 	}
 
-	sendAll(ms, e.Users, message)
+	sendAll[T](ms, e.Users, message, false)
 }
 
 func (ms mafiaServer[T]) HandleNightStarted(e game.NightStartedEvent) {
-	sendAll(ms, e.Users, "Город засыпает. Просыпается "+e.FirstToWake)
+	sendAll[T](ms, e.Users, "Город засыпает. Просыпается "+e.FirstToWake, false)
 }
 
 func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
@@ -146,27 +145,19 @@ func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
 		text = "Выбирайте"
 	}
 
-	msg := tgbotapi.NewMessage(e.Player.User, text)
-
-	var keyboard [][]tgbotapi.KeyboardButton
-	for _, v := range e.Victims {
-		keyboard = append(keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(v)))
-	}
-	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
-
-	ms.sendMessage(serverMessage{
-		user:    e.Player.User,
-		text:    text,
-		options: e.Victims,
+	ms.SendMessage(ServerMessage{
+		User:    e.Player.User,
+		Text:    text,
+		Options: e.Victims,
 	})
 }
 
 func (ms mafiaServer[T]) HandleUnexpectedActTrial(e game.UnexpectedActTrialEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Какого фига, ты спать должен"))
+	ms.SendMessage(newMessage(e.User, "Какого фига, ты спать должен", false))
 }
 
 func (ms mafiaServer[T]) HandleUnsupportedAct(e game.UnsupportedActEvent) {
-	ms.sendMessage(newMessageKeepKeyboard(e.User, "Вы не можете его выбрать"))
+	ms.SendMessage(newMessage(e.User, "Вы не можете его выбрать", false))
 }
 
 func (ms mafiaServer[T]) HandleActEnded(e game.ActEndedEvent) {
@@ -194,7 +185,7 @@ func (ms mafiaServer[T]) HandleActEnded(e game.ActEndedEvent) {
 	} else {
 		message += "Просыпается " + e.Next
 	}
-	ms.sendMessage(newMessageRemoveKeyboard(e.Player.User, message))
+	ms.SendMessage(newMessage(e.Player.User, message, true))
 }
 
 func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {
@@ -212,7 +203,7 @@ func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {
 		}
 		message += "\n"
 	}
-	sendAll(ms, e.Users, message)
+	sendAll[T](ms, e.Users, message, false)
 }
 
 func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {
@@ -222,10 +213,10 @@ func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {
 		message += nick + "\n"
 	}
 
-	sendAll(ms, e.Users, message)
+	sendAll[T](ms, e.Users, message, true)
 }
 
 // cleaning references for garbage collection
 func (ms mafiaServer[T]) HandleNotifyStopGame(e game.NotifyStopGameEvent) {
-	sendAll(ms, e.Users, "Игра прервана")
+	sendAll[T](ms, e.Users, "Игра прервана", true)
 }
