@@ -121,7 +121,7 @@ func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
 					message += nick + "\n"
 				}
 				ms.SendMessage(newMessage(msg.User, message, false))
-				go game.Start(game.RandomPlayerQueue()) // tries to start, ignores the error
+				game.Start(game.RandomPlayerQueue()) // tries to start, ignores the error
 			} else {
 				ms.SendMessage(newMessage(msg.User, "Игра уже началась", false))
 			}

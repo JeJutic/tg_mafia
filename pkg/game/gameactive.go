@@ -87,7 +87,7 @@ func (ga *gameActive) checkForEnd() bool {
 				e.Winners = append(e.Winners, ga.UserToNick[player.User])
 			}
 		}
-		go ga.eOutput.HandleWin(e)
+		ga.eOutput.HandleWin(e)
 		ga.StopGame(false)
 
 		return true
@@ -139,7 +139,7 @@ func (ga *gameActive) startDay() {
 	for _, player := range ga.pQueue {
 		e.UserToCandidates[player.User] = ga.voting.userCanVote(player.User)
 	}
-	go ga.eOutput.HandleVotingStarted(e)
+	ga.eOutput.HandleVotingStarted(e)
 }
 
 func (ga *gameActive) startNight() {
@@ -150,7 +150,7 @@ func (ga *gameActive) startNight() {
 		return
 	}
 
-	go ga.eOutput.HandleNightStarted(NightStartedEvent{
+	ga.eOutput.HandleNightStarted(NightStartedEvent{
 		ga.GetUsers(),
 		ga.UserToNick[ga.pQueue[0].User],
 	})
@@ -173,7 +173,7 @@ func (ga *gameActive) votingConclusion() {
 		ga.removePlayer(candidate)
 	}
 
-	go ga.eOutput.HandleVotingEnded(e)
+	ga.eOutput.HandleVotingEnded(e)
 	ga.startNight()
 }
 

@@ -51,12 +51,12 @@ func (v *voting) handleVote(user int64, vote string) {
 				v.gActive.votingConclusion()
 			}
 		} else {
-			go v.gActive.eOutput.HandleUnableToVote(UnableToVoteEvent{
+			v.gActive.eOutput.HandleUnableToVote(UnableToVoteEvent{
 				user,
 			})
 		}
 	} else {
-		go v.gActive.eOutput.HandleAlreadyVoted(AlreadyVotedEvent{
+		v.gActive.eOutput.HandleAlreadyVoted(AlreadyVotedEvent{
 			user,
 		})
 	}

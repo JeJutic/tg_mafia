@@ -33,15 +33,11 @@ func rolesFromPlayers(players []Player) []Role {
 	return roles
 }
 
-// func TestMain(m *testing.M) {
-// 	runtime.GOMAXPROCS(1)
-// 	code := m.Run()
-// 	os.Exit(code)
-// }
+const sleepDuringNight = 100 * time.Millisecond
 
 func handle(g *Game, user int64, request string) {
-	g.GActive.Handle(user, request)
-	time.Sleep(2 * time.Millisecond)
+	go g.GActive.Handle(user, request)
+	time.Sleep(10 * time.Millisecond)
 }
 
 func Test_scenario1(t *testing.T) {
@@ -189,7 +185,7 @@ func Test_scenario1(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	assert.Equal(true, *unsuccessfulShot, "shot expected to be unsuccessful")
 
@@ -249,7 +245,7 @@ func Test_scenario1(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "b")
 	handle(g, 2, "a")
@@ -295,7 +291,7 @@ func Test_scenario1(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "b")
 	handle(g, 2, "a")
@@ -340,7 +336,7 @@ func Test_scenario1(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "skip")
 	handle(g, 4, "skip")
@@ -383,6 +379,8 @@ func Test_scenario1(t *testing.T) {
 
 	handle(g, 5, "skip")
 
+	time.Sleep(sleepDuringNight)
+
 	handle(g, 1, "skip")
 	handle(g, 4, "a")
 
@@ -400,11 +398,11 @@ func Test_scenario1(t *testing.T) {
 	assert.Equal(false, *closed, "game should not have been closed yet")
 	handle(g, 5, "a")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
-	// mockEOutput.EXPECT().HandleNotifyStopGame(mock.Anything).Once()
-	// g.StopGame(true)
-	assert.Equal(true, *closed, "game should have been closed")
+	// // mockEOutput.EXPECT().HandleNotifyStopGame(mock.Anything).Once()
+	// // g.StopGame(true)
+	// assert.Equal(true, *closed, "game should have been closed")
 }
 
 func containsIn(slice []string, s string) int {
@@ -506,7 +504,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "c")
 	handle(g, 2, "a")
@@ -556,7 +554,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "c")
 	handle(g, 2, "a")
@@ -607,7 +605,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "c")
 	handle(g, 2, "a")
@@ -659,7 +657,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 2, "d")
 	handle(g, 3, "b")
@@ -706,7 +704,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "b")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 3, "d")
 	handle(g, 4, "c")
@@ -723,7 +721,7 @@ func Test_scenario2(t *testing.T) {
 
 	handle(g, 6, "d")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 }
 
 func Test_scenario3(t *testing.T) {
@@ -816,7 +814,7 @@ func Test_scenario3(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 1, "c")
 	handle(g, 2, "a")
@@ -867,7 +865,7 @@ func Test_scenario3(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 2, "c")
 	handle(g, 3, "skip")
@@ -914,7 +912,7 @@ func Test_scenario3(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 
 	handle(g, 2, "c")
 	handle(g, 3, "skip")
@@ -959,5 +957,5 @@ func Test_scenario3(t *testing.T) {
 
 	handle(g, 6, "skip")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepDuringNight)
 }

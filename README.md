@@ -11,7 +11,7 @@ Godoc for package `game` is available [here](https://pkg.go.dev/github.com/jejut
 
 ## Requirements
 
-* **Golang** [1.21+]
+* **Golang** [1.20+]
 
 ## Libraries used
 

@@ -58,7 +58,7 @@ func (g *Game) Start(pQueue []Player) error {
 	}
 
 	g.initGameActive(pQueue)
-	go g.eOutput.HandleFirstDay(FirstDayEvent{
+	g.eOutput.HandleFirstDay(FirstDayEvent{
 		g.UserToNick,
 		g.GActive.pQueue,
 	})
@@ -106,7 +106,7 @@ func (g *Game) StopGame(notify bool) {
 	g.close(g)
 
 	if notify {
-		go g.eOutput.HandleNotifyStopGame(NotifyStopGameEvent{
+		g.eOutput.HandleNotifyStopGame(NotifyStopGameEvent{
 			g.GetUsers(),
 		})
 	}
