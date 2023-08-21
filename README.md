@@ -12,6 +12,8 @@ Godoc for package `game` is available [here](https://pkg.go.dev/github.com/jejut
 ## Requirements
 
 * **Golang** [1.20+]
+* **Telegram bot token**
+* **PostgreSQL** [14] running instance
 
 ## Libraries used
 
@@ -19,36 +21,14 @@ Godoc for package `game` is available [here](https://pkg.go.dev/github.com/jejut
 Golang bindings for the Telegram Bot API
 * [Mockery](https://github.com/vektra/mockery)\
 A mock code autogenerator for Go
+* [pgx](https://github.com/jackc/pgx)\
+PostgreSQL Driver and Toolkit
 
 ## Usage
 
-Program tries to obtain environment variable `TELEGRAM_APITOKEN`
-at start-up which will be used as a [bot token](https://core.telegram.org/bots/api#authorizing-your-bot).
+Program tries to obtain environment variables `TELEGRAM_APITOKEN`,
+which will be used as a [bot token](https://core.telegram.org/bots/api#authorizing-your-bot),
+and `POSTGRES_URI`, which will be used as [connection string to PostrgreSQL](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING), at start-up.
 
-_Interaction with bot has not yet been translated from Russian._
-
-Команды для ввода боту:
-
-* `/create [тэг роли [тэг роли [тэг роли [...]]]]`\
-  Создает игровую комнату с _картами ролей_ соответствующими 
-  указанным тэгам.
-  
-  Тэги:
-  - Мафия: мафия, маф
-  - Мирный: мирный, мир
-  - Врач: врач, доктор, док
-  - Свидетельница: свидетельница, свид
-  - Комиссар: комиссар, ком, шериф
-  - Маньяк: маньяк, ман, убийца
-  - Разгадыватель: разгадыватель, раз
-
-* `/join код-комнаты [никнейм]` (или простая форма - `код-комнаты [никнейм]`)\
-  Присодиняет пользователя к игровой комнате с еще не начавшейся
-  игрой. Когда никнейм не указан, используется telegram username.
-  Когда число игроков становится равно числу _карт ролей_, указанных
-  при создании, игра автоматически начинается. Карты ролей
-  распределяются случайным образом.
-
-* `/stop`\
-  Останавливает комнату игры, в которой сейчас находится игрок.
-  Возобновление на данный момент не предусмотрено.
+Interaction with bot has not yet been translated from Russian. 
+You can find commands [here](pkg/gameserver/startText.txt) or with `/start` command.
