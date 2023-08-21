@@ -1,4 +1,4 @@
-package gameServer
+package gameserver
 
 import (
 	"log"

@@ -1,6 +1,8 @@
-package gameServer
+package gameserver
 
 import (
+	"sync"
+
 	game "github.com/jejutic/tg_mafia/pkg/game"
 )
 
@@ -42,16 +44,27 @@ func sendAll[T any](s Server[T], users []int64, text string, removeOptions bool)
 
 type mafiaServer[T any] struct {
 	Server[T]
-	userToGame map[int64]*game.Game
-	codeToGame map[int]*game.Game
+	groups         groupStorage
+	userToGameCode map[int64]int
+	codeToGame     map[int]*game.Game
+	mu             *sync.Mutex
 }
 
-func NewMafiaServer[T any](s Server[T]) mafiaServer[T] {
+func NewMafiaServer[T any](s Server[T], driverName string, dbUrl string) mafiaServer[T] {
 	return mafiaServer[T]{
-		Server:     s,
-		userToGame: make(map[int64]*game.Game),
-		codeToGame: make(map[int]*game.Game),
+		Server: s,
+		groups: &groupsDb{
+			driverName,
+			dbUrl,
+		},
+		userToGameCode: make(map[int64]int),
+		codeToGame:     make(map[int]*game.Game),
+		mu:             &sync.Mutex{},
 	}
+}
+
+func (ms mafiaServer[T]) userToGame(user int64) *game.Game {
+	return ms.codeToGame[ms.userToGameCode[user]]
 }
 
 func Run[T any](ms mafiaServer[T]) {
@@ -65,7 +78,7 @@ func Run[T any](ms mafiaServer[T]) {
 		if msg.Command {
 			handleCommand(ms, *msg)
 		} else {
-			if game := ms.userToGame[msg.User]; game != nil && game.Started() {
+			if game := ms.userToGame(msg.User); game != nil && game.Started() {
 				game.GActive.Handle(msg.User, msg.Text)
 			} else if game == nil {
 				handleCommand(ms, UserMessage{

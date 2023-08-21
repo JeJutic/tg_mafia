@@ -6,7 +6,8 @@ import (
 	"unicode/utf16"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	gameServer "github.com/jejutic/tg_mafia/pkg/gameServer"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	gameServer "github.com/jejutic/tg_mafia/pkg/gameserver"
 )
 
 type tgBotServer struct {
@@ -23,7 +24,11 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	s := tgBotServer{bot}
-	gameServer.Run[tgbotapi.Update](gameServer.NewMafiaServer[tgbotapi.Update](s))
+	gameServer.Run[tgbotapi.Update](gameServer.NewMafiaServer[tgbotapi.Update](
+		s,
+		"pgx",
+		os.Getenv("POSTGRES_URI"),
+	))
 }
 
 func (tbs tgBotServer) GetUpdatesChan() <-chan tgbotapi.Update {
