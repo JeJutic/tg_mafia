@@ -76,12 +76,12 @@ func Run[T any](ms mafiaServer[T]) {
 		}
 
 		if msg.Command {
-			handleCommand(ms, *msg)
+			go handleCommand(ms, *msg)
 		} else {
 			if game := ms.userToGame(msg.User); game != nil && game.Started() {
 				game.GActive.Handle(msg.User, msg.Text)
 			} else if game == nil {
-				handleCommand(ms, UserMessage{
+				go handleCommand(ms, UserMessage{
 					User: msg.User,
 					Text: "/join " + msg.Text,
 				})
