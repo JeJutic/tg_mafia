@@ -47,7 +47,7 @@ type mafiaServer[T any] struct {
 	groups         groupStorage
 	userToGameCode map[int64]int
 	codeToGame     map[int]*game.Game
-	mu             *sync.Mutex
+	mu             *sync.RWMutex
 }
 
 func NewMafiaServer[T any](s Server[T], driverName string, dbUrl string) mafiaServer[T] {
@@ -59,7 +59,7 @@ func NewMafiaServer[T any](s Server[T], driverName string, dbUrl string) mafiaSe
 		},
 		userToGameCode: make(map[int64]int),
 		codeToGame:     make(map[int]*game.Game),
-		mu:             &sync.Mutex{},
+		mu:             &sync.RWMutex{},
 	}
 }
 
@@ -76,12 +76,12 @@ func Run[T any](ms mafiaServer[T]) {
 		}
 
 		if msg.Command {
-			go handleCommand(ms, *msg)
+			go ms.handleCommand(*msg)
 		} else {
 			if game := ms.userToGame(msg.User); game != nil && game.Started() {
 				game.GActive.Handle(msg.User, msg.Text)
 			} else if game == nil {
-				go handleCommand(ms, UserMessage{
+				go ms.handleCommand(UserMessage{
 					User: msg.User,
 					Text: "/join " + msg.Text,
 				})

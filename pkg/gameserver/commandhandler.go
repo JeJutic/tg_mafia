@@ -41,10 +41,20 @@ func parseRoles(tokens []string) ([]game.Role, error) {
 	return roles, game.ValidRoles(roles)
 }
 
+func (ms mafiaServer[T]) closeGame(code int, game *game.Game) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	ms.codeToGame[code] = nil
+	for _, user := range game.NickToUser {
+		delete(ms.userToGameCode, user)
+	}
+}
+
 //go:embed startText.txt
 var startText string
 
-func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
+func (ms mafiaServer[T]) handleCommand(msg UserMessage) {
 
 	switch words := strings.Split(msg.Text, " "); words[0][1:] {
 	case "create":
@@ -68,11 +78,8 @@ func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
 			return
 		}
 
-		close := func(game *game.Game) { //closure
-			ms.codeToGame[code] = nil
-			for _, user := range game.NickToUser {
-				delete(ms.userToGameCode, user)
-			}
+		close := func(game *game.Game) {
+			ms.closeGame(code, game) // code is in a closure
 		}
 		game := game.NewGame(ms, code, msg.User, roles, close)
 		ms.codeToGame[code] = game
@@ -140,9 +147,6 @@ func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
 		}
 
 	case "stop":
-		ms.mu.Lock()
-		defer ms.mu.Unlock()
-
 		if game := ms.userToGame(msg.User); game != nil {
 			game.StopGame(true)
 		} else {
@@ -185,6 +189,9 @@ func handleCommand[T any](ms mafiaServer[T], msg UserMessage) {
 		return
 
 	case "invite":
+		ms.mu.RLock()
+		defer ms.mu.RUnlock()
+
 		if code := ms.userToGameCode[msg.User]; code != 0 {
 			if len(words) < 2 {
 				ms.SendMessage(newMessage(msg.User, "В команде не представлена группа", false))
