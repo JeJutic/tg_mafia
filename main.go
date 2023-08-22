@@ -28,6 +28,7 @@ func main() {
 		s,
 		"pgx",
 		os.Getenv("POSTGRES_URI"),
+		true,
 	))
 }
 
