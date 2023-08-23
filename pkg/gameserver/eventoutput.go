@@ -109,7 +109,7 @@ func (ms mafiaServer[T]) HandleVotingEnded(e game.VotingEndedEvent) {
 		message += "Исключили " + e.UserToNick[e.Candidate]
 	}
 
-	sendAll[T](ms, e.Users, message, false)
+	sendAll[T](ms, e.Users, message, true)
 }
 
 func (ms mafiaServer[T]) HandleNightStarted(e game.NightStartedEvent) {
@@ -153,7 +153,7 @@ func (ms mafiaServer[T]) HandleNightAct(e game.NightActEvent) {
 }
 
 func (ms mafiaServer[T]) HandleUnexpectedActTrial(e game.UnexpectedActTrialEvent) {
-	ms.SendMessage(newMessage(e.User, "Какого фига, ты спать должен", false))
+	ms.SendMessage(newMessage(e.User, "Какого фига, ты спать должен", true))
 }
 
 func (ms mafiaServer[T]) HandleUnsupportedAct(e game.UnsupportedActEvent) {
@@ -203,7 +203,7 @@ func (ms mafiaServer[T]) HandleNightEnded(e game.NightEndedEvent) {
 		}
 		message += "\n"
 	}
-	sendAll[T](ms, e.Users, message, false)
+	sendAll[T](ms, e.Users, message, true)
 }
 
 func (ms mafiaServer[T]) HandleWin(e game.WinEvent) {

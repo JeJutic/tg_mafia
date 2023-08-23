@@ -19,13 +19,21 @@ func (ga *gameActive) initVoting(firstVoting bool) {
 }
 
 func (v *voting) userCanVote(user int64) []string {
+	var alive bool
 	list := make([]string, 1)
 	list[0] = skip
+
 	for _, player := range v.gActive.pQueue {
 		if player.User != user {
 			list = append(list, v.gActive.UserToNick[player.User])
+		} else {
+			alive = true
 		}
 	}
+	if !alive {
+		return make([]string, 0)
+	}
+
 	return list
 }
 
