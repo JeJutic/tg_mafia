@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 )
 
 type groupStorage interface {
@@ -53,6 +54,8 @@ func (g *groupsDb) initDb() error {
 	if err != nil {
 		return err
 	}
+
+	log.Println("Database tables inited")
 	return nil
 }
 
