@@ -214,7 +214,7 @@ func (ms mafiaServer[T]) handleCommand(msg UserMessage) {
 
 				ms.SendMessage(ServerMessage{
 					User: user,
-					Text: ms.GetDefaultNick(user) + " как участник " + group +
+					Text: ms.GetDefaultNick(msg.User) + " как участник " + group +
 						" приглашает Вас в игру " + strconv.Itoa(code),
 					Options: []string{
 						"/join " + strconv.Itoa(code),

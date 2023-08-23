@@ -7,7 +7,9 @@ Currently 4 sides availible:
 * Maniac side: Maniac role
 * Role Guesser side: Role Guesser role
 
-Godoc for package `game` is available [here](https://pkg.go.dev/github.com/jejutic/tg_mafia/pkg).
+Godoc for is available [here](https://pkg.go.dev/github.com/jejutic/tg_mafia/pkg).
+Package `gameserver` can be used for adding mafia game system (server) on top of any
+users-server communication as shown in [web_mafia](https://github.com/jejutic/web_mafia).
 
 ## Requirements
 
