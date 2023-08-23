@@ -1,21 +1,24 @@
 package gameserver
 
 import (
+	"log"
 	"sync"
 
 	game "github.com/jejutic/tg_mafia/pkg/game"
 )
 
+// UserMessage represents message sent from user to server
 type UserMessage struct {
-	User    int64
-	Text    string
-	Command bool
+	User    int64  // user sent
+	Text    string // text
+	Command bool   // if message is a command
 }
 
+// ServerMessage represents message sent from server to user
 type ServerMessage struct {
-	User    int64
-	Text    string
-	Options []string
+	User    int64    // receiver of message
+	Text    string   // text
+	Options []string // options for user; if Options isn't nil and have 0 len, means previous options should be hidden
 }
 
 func newMessage(user int64, text string, removeOptions bool) ServerMessage {
@@ -29,11 +32,13 @@ func newMessage(user int64, text string, removeOptions bool) ServerMessage {
 	return msg
 }
 
+// Server represents any endpoint user can chat with. Type T is an update from user format
+// which is suitable for sending in chan
 type Server[T any] interface {
-	GetUpdatesChan() <-chan T
-	UpdateToMessage(T) *UserMessage // didn't want to make an extra goroutine for casting of updates from chan
-	SendMessage(ServerMessage)
-	GetDefaultNick(int64) string
+	GetUpdatesChan() <-chan T       // channel of updates from user
+	UpdateToMessage(T) *UserMessage // transforms update to standard format
+	SendMessage(ServerMessage)      // sends message to user
+	GetDefaultNick(int64) string    // gets default user's nickname
 }
 
 func sendAll[T any](s Server[T], users []int64, text string, removeOptions bool) {
@@ -50,13 +55,23 @@ type mafiaServer[T any] struct {
 	mu             *sync.RWMutex
 }
 
-func NewMafiaServer[T any](s Server[T], driverName string, dbUrl string) mafiaServer[T] {
+// NewMafiaServer creates new instance of server for mafia game.
+// s is a server that will be used internally.
+// driverName and dbUrl specify connection to database/sql.DB.
+// initDb specifies if "CREATE TABLE IF NOT EXISTS" should be called for tables needed internally.
+func NewMafiaServer[T any](s Server[T], driverName string, dbUrl string, initDb bool) mafiaServer[T] {
+	groups := &groupsDb{
+		driverName,
+		dbUrl,
+	}
+	if initDb {
+		if err := groups.initDb(); err != nil {
+			log.Println(err)
+		}
+	}
 	return mafiaServer[T]{
-		Server: s,
-		groups: &groupsDb{
-			driverName,
-			dbUrl,
-		},
+		Server:         s,
+		groups:         groups,
 		userToGameCode: make(map[int64]int),
 		codeToGame:     make(map[int]*game.Game),
 		mu:             &sync.RWMutex{},
@@ -67,6 +82,7 @@ func (ms mafiaServer[T]) userToGame(user int64) *game.Game {
 	return ms.codeToGame[ms.userToGameCode[user]]
 }
 
+// Run starts listening mafiaServer
 func Run[T any](ms mafiaServer[T]) {
 
 	for update := range ms.GetUpdatesChan() {

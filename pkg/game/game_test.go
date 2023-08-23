@@ -293,6 +293,11 @@ func Test_scenario1(t *testing.T) {
 
 	time.Sleep(sleepDuringNight)
 
+	mockEOutput.EXPECT().HandleUnableToVote(UnableToVoteEvent{
+		User: 3,
+	}).Once()
+	handle(g, 3, "a")
+
 	handle(g, 1, "b")
 	handle(g, 2, "a")
 	handle(g, 4, "b")

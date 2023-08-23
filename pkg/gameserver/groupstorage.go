@@ -25,6 +25,37 @@ func wrapUnableToConnect(err error) error {
 	return fmt.Errorf("unable to connect to database: %w", err)
 }
 
+const initGroupsQuery = `
+CREATE TABLE IF NOT EXISTS groups (
+	group_id INT GENERATED ALWAYS AS IDENTITY,
+	name VARCHAR(50) UNIQUE NOT NULL
+);
+`
+const initGroupUserQuery = `
+CREATE TABLE IF NOT EXISTS group_user (
+	group_id INT NOT NULL,
+	user_id INT NOT NULL
+);
+`
+
+func (g *groupsDb) initDb() error {
+	db, err := g.open()
+	if err != nil {
+		return wrapUnableToConnect(err)
+	}
+	defer db.Close()
+
+	_, err = db.Query(initGroupsQuery)
+	if err != nil {
+		return err
+	}
+	_, err = db.Query(initGroupUserQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 const createGroupQuery = `
 INSERT INTO groups (name) VALUES ($1)
 `
